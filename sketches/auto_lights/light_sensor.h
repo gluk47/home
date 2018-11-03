@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common.h"
 #include "handlers.h"
 #include <map>
 
@@ -48,9 +47,9 @@ void TLightSensor::update(int ms) {
     bool becameDark = IsDarkNow();
     if (wasDark ^ becameDark)
         hysteresis = Hysteresis_s * 1000;
-    Serial.println("light: "_str + value_);
+    Serial.printf("light: %d\n", value_);
     //if (hysteresis == 0)
-    //  Serial.println("Is dark -> "_str + becameDark);
+    //  Serial.println("Is dark -> %s" + becameDark ? "yes" : "no");
 }
 
 bool TLightSensor::IsDark() const {

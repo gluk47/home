@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common.h"
 #include "handlers.h"
 #include "light_sensor.h"
 
@@ -23,10 +22,9 @@ struct TSwitch {
     void write(int now) const {
         if (now != last_report && now % 5000 < 10) {
             last_report = now;
-            Serial.println(
-                "[pin "_str + pin + "] "
-                + (light ? "IsDark? "_str + light->IsDark() + "; " : "")
-                + "http? " + httpSwitch
+            Serial.printf("[pin %d] IsDark? %s; http? %s\n", pin,
+                (light ? (light->IsDark() ? "yes" : "no") : "null"),
+                (httpSwitch ? "on" : "off")
             );
         }
         const int new_state = ((!light or light->IsDark()) and httpSwitch) ? HIGH : LOW;
