@@ -74,9 +74,6 @@ private:
         }
         state &= 1;
         httpSensor[id] = state;
-        int pin = httpSensor.pins[id];
-        if (pin != Pins::No)
-            digitalWrite(pin, state ? HIGH : LOW);
         // Behave nice with web-interface
         Server.sendHeader("Location","/");
         Server.send(303);
