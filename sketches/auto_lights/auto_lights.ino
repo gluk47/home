@@ -34,7 +34,7 @@
 TLightSensor LightSensor;
 THttpSensor& HttpSensor = THttpSensor::the();
 THttpInterface Http(HttpSensor, LightSensor, 80);
-WifiClient wifi(NConfig::hostname, NConfig::wifi_password);
+WifiClient wifi(NConfig::essid, NConfig::wifi_password);
 Ota ota(NConfig::hostname, NConfig::ota_pass_md5);
 
 const TSwitch Switches[] = {
