@@ -18,7 +18,7 @@ public:
     Ota(const char* hostname, const char* pass) {
         Handlers::addInit([hostname, pass]{
             ArduinoOTA.setHostname(hostname);
-            ArduinoOTA.setPassword(pass);
+            ArduinoOTA.setPasswordHash(pass);
 
             ArduinoOTA.onStart([]{ Serial.println("[OTA update] Started" ); });
             ArduinoOTA.onEnd  ([]{ Serial.println("[OTA update] Finished"); });
