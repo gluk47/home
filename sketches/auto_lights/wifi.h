@@ -8,8 +8,7 @@ struct WifiClient {
     , password(password)
     {
         WiFi.mode(WIFI_STA);
-        reconnect();
-
+        Handlers::addInit([this] { reconnect(); });
         Handlers::add([this](int){ reconnect(); });
     }
 

@@ -96,11 +96,7 @@ private:
     }
 
     void get_debug() {
-        String response;
-        for (const auto& p: lightSensor.GetState())
-            response += String(p.first) + ": " + p.second + "\n";
-
-        Server.send(200, "text/plain", response);
+        Server.send(200, "text/plain", Handlers::debug());
     }
 
     THttpSensor& httpSensor;

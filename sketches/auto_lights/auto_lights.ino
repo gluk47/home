@@ -31,7 +31,7 @@
  * Lights can be turned off independently.
  */
 
-TLightSensor LightSensor;
+TLightSensor LightSensor("front");
 THttpSensor& HttpSensor = THttpSensor::the();
 THttpInterface Http(HttpSensor, LightSensor, 80);
 WifiClient wifi(NConfig::essid, NConfig::wifi_password);
@@ -58,11 +58,11 @@ void setup() {
     delay(50);
     Serial.println('\n');
 
+    Handlers::init();
     if (MDNS.begin(NConfig::hostname))
         Serial.printf("mDNS responder started: %s.local\n", NConfig::hostname);
     else
         Serial.println("Error setting up MDNS responder!");
-
     Serial.println("Setup done\n");
 }
 

@@ -8,11 +8,12 @@ struct TLightSensor {
     int Darkness = 400; // 0 .. 1024
     static constexpr int Hysteresis_s = 10;
 
-    TLightSensor() {
+    TLightSensor(String&& name) {
         pinMode(pin, INPUT);
         Handlers::add([this](int when){
             update(when);
         });
+        Handlers::addDebug("LightSensor." + name, [this]{ return GetState(); });
     }
 
     int value() const noexcept { return value_; }
@@ -20,14 +21,14 @@ struct TLightSensor {
     // with hysteresis
     bool IsDark() const;
     bool IsDarkNow() const { return value_ < Darkness; }
-    std::map<String, int> GetState() {
+    std::map<String, String> GetState() const {
         return {
-            {"value", value_},
-            {"darkness", Darkness},
-            {"lastUpdate", lastUpdate},
-            {"hysteresis", hysteresis},
-            {"IsDark()", IsDark()},
-            {"IsDarkNow()", IsDarkNow()}
+            {"value", String(value_)},
+            {"darkness", String(Darkness)},
+            {"lastUpdate", String(lastUpdate) + " ms"},
+            {"hysteresis", String(hysteresis)},
+            {"IsDark()", IsDark() ? "yes" : "no"},
+            {"IsDarkNow()", IsDarkNow() ? "yes" : "no"}
         };
     }
 
