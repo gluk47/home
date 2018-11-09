@@ -10,8 +10,14 @@ struct Handlers {
         return h;
     }
 
-    static void add(std::function<void(int)>&& f) {
-        the().all.push_back(std::move(f));
+    static void delay() {
+        ::delay(the().get_delay());
+    }
+
+    static void add(std::function<void(int)>&& f, int period_ms = 250) {
+        auto& h = the();
+        h.handlers[period_ms].functions.push_back(std::move(f));
+        h.delay_ = h.handlers.begin()->first;
     }
 
     static void addInit(std::function<void()>&& f) {
@@ -29,10 +35,13 @@ struct Handlers {
     }
 
     static void handle() {
-        int when = millis();
+        int now = millis();
         const Handlers& h = the();
-        for (const auto& handle : h.all)
-            handle(when);
+        for (const auto& handle : h.handlers) {
+            int period = handle.first;
+            if (!handle.second.run(now, period))
+                return;
+        }
     }
 
     static String debug() {
@@ -48,9 +57,27 @@ struct Handlers {
         return resp;
     }
 
+    int get_delay() const {
+        return delay_;
+    }
+
 private:
+    struct THandlersSamePeriod {
+        std::vector<std::function<void(int)>> functions;
+        mutable int last_execution = -1024;
+        bool run(int now, int period) const {
+            if (now > last_execution && now - last_execution < period)
+                return false;
+            last_execution = now;
+            for (const auto& handle : functions)
+                handle(now);
+            return true;
+        }
+    };
+
     Handlers() = default;
-    std::vector<std::function<void(int)>> all;
+    std::map<int, THandlersSamePeriod> handlers;
     std::vector<std::function<void()>> initters;
     std::vector<std::pair<String, std::function<std::map<String,String>()>>> debugHandlers;
+    int delay_ = 250;
 };

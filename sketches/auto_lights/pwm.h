@@ -5,7 +5,6 @@
 struct TPwm {
     int value = 0;
     int step = 1;
-    uint64_t ms_per_step = 5;
     int range = 1024;
     int pin;
     // which half-periods to enable light (vector of any length)
@@ -13,18 +12,20 @@ struct TPwm {
     int enabled_i = 0;
     const bool& httpSwitch;
     const TLightSensor& light;
+    uint64_t ms_per_step = 5;
 
-    TPwm(int pin, std::vector<bool>&& enabled, bool& httpSwitch, const TLightSensor& light)
+    TPwm(int pin, std::vector<bool>&& enabled, bool& httpSwitch, const TLightSensor& light, int period = 5)
     : pin(pin)
     , enabled(std::move(enabled))
     , httpSwitch(httpSwitch)
-    , light(light) {
+    , light(light)
+    , ms_per_step(period) {
         pinMode(pin, OUTPUT);
         digitalWrite(pin, LOW);
 
         Handlers::add([this](int){
             (++*this).write();
-        });
+        }, ms_per_step);
     }
 
     TPwm& operator++() {

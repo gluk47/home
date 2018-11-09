@@ -48,7 +48,7 @@ void TLightSensor::update(int ms) {
     bool becameDark = IsDarkNow();
     if (wasDark ^ becameDark)
         hysteresis = Hysteresis_s * 1000;
-    Serial.printf("light: %d\n", value_);
+    //Serial.printf("light: %d\n", value_);
     //if (hysteresis == 0)
     //  Serial.println("Is dark -> %s" + becameDark ? "yes" : "no");
 }

@@ -48,8 +48,8 @@ const TSwitch Switches[] = {
 
 TPwm Pwms[] = {
 #ifdef PWM_INDOOR
-  {Pins::Indoor[0], {1, 1, 0, 0, 1, 0}, HttpSensor[THttpSensor::EIndoor]},
-  {Pins::Indoor[1], {0, 0, 1, 1, 0, 1}, HttpSensor[THttpSensor::EIndoor]}
+  {Pins::Indoor[0], {1, 1, 0, 0, 1, 0}, HttpSensor[THttpSensor::EIndoor], LightSensor},
+  {Pins::Indoor[1], {0, 0, 1, 1, 0, 1}, HttpSensor[THttpSensor::EIndoor], LightSensor}
 #endif
 };
 
@@ -57,7 +57,7 @@ void setup() {
     Serial.begin(115200);
     delay(50);
     Serial.println('\n');
-
+    Serial.printf("Set delay to %d\n", Handlers::the().get_delay());
     Handlers::init();
     if (MDNS.begin(NConfig::hostname))
         Serial.printf("mDNS responder started: %s.local\n", NConfig::hostname);
@@ -68,5 +68,5 @@ void setup() {
 
 void loop() {
     Handlers::handle();
-    delay(250);
+    Handlers::delay();
 }
