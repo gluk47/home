@@ -25,10 +25,15 @@ struct WifiClient {
         }
 
         Serial.printf("\nConnection established!\nIP address:\t");
-        Serial.println(WiFi.localIP());
+        Serial.println(ip_ = WiFi.localIP().toString());
+    }
+
+    const String& ip() const {
+        return ip_;
     }
 
 private:
     const char* essid;
     const char* password;
+    String ip_;
 };

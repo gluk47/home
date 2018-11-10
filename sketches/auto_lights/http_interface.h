@@ -22,11 +22,8 @@ public:
         HANDLE( debug,  GET,     get_debug);
 #undef HANDLE
 
-        Handlers::add([this](int){
-            Server.handleClient();
-        });
-
-        Server.begin();
+        Handlers::addInit([this]{ Server.begin(); });
+        Handlers::add([this](int){ Server.handleClient(); }, 100);
     }
 
 private:

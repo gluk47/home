@@ -1,6 +1,7 @@
 #include "handlers.h"
 #include "http.h"
 #include "http_interface.h"
+#include "lcd.h"
 #include "light_sensor.h"
 #include "ota.h"
 #include "pins.h"
@@ -36,6 +37,7 @@ THttpSensor& HttpSensor = THttpSensor::the();
 THttpInterface Http(HttpSensor, LightSensor, 80);
 WifiClient wifi(NConfig::essid, NConfig::wifi_password);
 Ota ota(NConfig::hostname, NConfig::ota_pass_md5);
+TLcd lcd(wifi);
 
 const TSwitch Switches[] = {
 #ifndef PWM_INDOOR
