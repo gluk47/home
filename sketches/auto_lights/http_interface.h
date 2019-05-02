@@ -18,7 +18,7 @@ public:
 #define HANDLE(handle,method,f) \
     do {\
         Server.on("/" #handle, HTTP_##method, [this]{f();});\
-        helps.push_back({#method, "/" #handle, help_##handle });\
+        helps.push_back({#method, "/" #handle, help_##f });\
     } while(false);
         HANDLE(      ,  GET,          root);
         HANDLE(toggle, POST,        toggle);
@@ -50,7 +50,7 @@ private:
         "</p>"                                                  "\n";
     }
 
-    static constexpr const char* help_ = "An HTML page with controls";
+    static constexpr const char* help_root = "An HTML page with controls";
     void root() {
         static String html = [&]{
             const char* labels[] = {
@@ -84,7 +84,7 @@ private:
         Server.send(303);
     }
 
-    static constexpr const char* help_set = "arg: int threshold. Set, when it is dark (see also 'get').";
+    static constexpr const char* help_set_darkness = "arg: int threshold. Set, when it is dark (see also 'get').";
     void set_darkness() {
         int threshold = Server.arg("threshold").toInt();
         Serial.println("set_darkness: "_str + threshold);
@@ -97,17 +97,17 @@ private:
         Server.send(303);
     }
 
-    static constexpr const char* help_get = "get the current brightness level (see also 'set').";
+    static constexpr const char* help_get_light = "get the current brightness level (see also 'set').";
     void get_light() {
         Server.send(200, "text/plain", ""_str + lightSensor.value() + "\n");
     }
 
-    static constexpr const char* help_debug = "Get all available debug info";
+    static constexpr const char* help_get_debug = "Get all available debug info";
     void get_debug() {
         Server.send(200, "text/plain", Handlers::debug());
     }
 
-    static constexpr const char* help_help = "===> You are here <===";
+    static constexpr const char* help_get_help = "===> You are here <===";
     void get_help() {
         String help;
         for (const auto& h : helps) {
