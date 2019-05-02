@@ -16,14 +16,20 @@ namespace std {
 class Ota {
 public:
     Ota(const char* hostname, const char* pass) {
-        Handlers::addInit([hostname, pass]{
+        Handlers::addInit([hostname, pass, this]{
             ArduinoOTA.setHostname(hostname);
             ArduinoOTA.setPasswordHash(pass);
 
-            ArduinoOTA.onStart([]{ Serial.println("[OTA update] Started" ); });
+            ArduinoOTA.onStart([this]{ Serial.println("[OTA update] Started" ); this->perc = -1; });
             ArduinoOTA.onEnd  ([]{ Serial.println("[OTA update] Finished"); });
-            ArduinoOTA.onProgress([](unsigned progress, unsigned total) {
-                Serial.printf("[OTA update] %u%%\n", (progress / (total / 100)));
+            ArduinoOTA.onProgress([this](unsigned progress, unsigned total) {
+                int perc = progress / (total / 100);
+                if (perc != this->perc) {
+                    Serial.printf("\r[OTA update] %u%%", perc);
+                    this->perc = perc;
+                    if (perc == 100)
+                        Serial.printf("\n");
+                }
             });
 
             ArduinoOTA.onError([](ota_error_t error) {
@@ -47,4 +53,7 @@ public:
             ArduinoOTA.handle();
         });
     }
+
+    private:
+        int perc = -1;
 };

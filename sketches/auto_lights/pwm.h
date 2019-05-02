@@ -26,6 +26,16 @@ struct TPwm {
         Handlers::add([this](int){
             (++*this).write();
         }, ms_per_step);
+
+        Handlers::addDebug("PWM (pin="_str + pin + ")", [this]{
+            return std::map<String, String> {
+                {"Value", String(value)},
+                {"Step", String(step)},
+                {"Range", String(range)},
+                {"HttpEnabled", this->httpSwitch ? "on" : "off"},
+                {"Light", this->light.IsDark() ? "dark" : "not dark"}
+            };
+        });
     }
 
     TPwm& operator++() {

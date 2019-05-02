@@ -7,6 +7,7 @@
 #include "common.h"
 
 #include <ESP8266WebServer.h>
+#include <vector>
 
 class THttpInterface {
 public:
@@ -14,12 +15,17 @@ public:
     : httpSensor(httpSensor)
     , lightSensor(lightSensor)
     , Server(port) {
-#define HANDLE(handle,method,f) Server.on("/" #handle, HTTP_##method, [this]{f();})
+#define HANDLE(handle,method,f) \
+    do {\
+        Server.on("/" #handle, HTTP_##method, [this]{f();});\
+        helps.push_back({#method, "/" #handle, help_##handle });\
+    } while(false);
         HANDLE(      ,  GET,          root);
         HANDLE(toggle, POST,        toggle);
         HANDLE(   set, POST,  set_darkness);
         HANDLE(   get,  GET,     get_light);
         HANDLE( debug,  GET,     get_debug);
+        HANDLE(  help,  GET,      get_help);
 #undef HANDLE
 
         Handlers::addInit([this]{ Server.begin(); });
@@ -44,6 +50,7 @@ private:
         "</p>"                                                  "\n";
     }
 
+    static constexpr const char* help_ = "An HTML page with controls";
     void root() {
         static String html = [&]{
             const char* labels[] = {
@@ -61,6 +68,7 @@ private:
         Server.send(200, "text/html", html);
     }
 
+    static constexpr const char* help_toggle = "args: int id, int state (1 = on, 2 = off). Allow or not a switch to turn on.\n  A light sensor may make the final decision.";
     void toggle() {
         int id = Server.arg("id").toInt();
         int state = Server.arg("state").toInt();
@@ -76,6 +84,7 @@ private:
         Server.send(303);
     }
 
+    static constexpr const char* help_set = "arg: int threshold. Set, when it is dark (see also 'get').";
     void set_darkness() {
         int threshold = Server.arg("threshold").toInt();
         Serial.println("set_darkness: "_str + threshold);
@@ -88,15 +97,32 @@ private:
         Server.send(303);
     }
 
+    static constexpr const char* help_get = "get the current brightness level (see also 'set').";
     void get_light() {
         Server.send(200, "text/plain", ""_str + lightSensor.value() + "\n");
     }
 
+    static constexpr const char* help_debug = "Get all available debug info";
     void get_debug() {
         Server.send(200, "text/plain", Handlers::debug());
+    }
+
+    static constexpr const char* help_help = "===> You are here <===";
+    void get_help() {
+        String help;
+        for (const auto& h : helps) {
+            help += String(h.method) + " " + h.path + ": " + h.description + "\n\n";
+        }
+        Server.send(200, "text/plain", help);
     }
 
     THttpSensor& httpSensor;
     TLightSensor& lightSensor;
     ESP8266WebServer Server;
+    struct THelpItem {
+        const char* method;
+        const char* path;
+        const char* description;
+    };
+    std::vector<THelpItem> helps;
 };

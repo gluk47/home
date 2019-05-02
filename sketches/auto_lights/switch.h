@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include "handlers.h"
 #include "light_sensor.h"
 
@@ -17,6 +18,14 @@ struct TSwitch {
         Handlers::add([this](int when){
             write(when);
         });
+
+        Handlers::addDebug("Switch (pin="_str + pin + ")", [this]{
+            return std::map<String, String> {
+                {"State", state == LOW ? "off" : "on"},
+                {"HttpEnabled", httpSwitch ? "on" : "off"},
+                {"Light", this->light ? (this->light->IsDark() ? "dark" : "not dark") : "no sensor"}
+            };
+        });
     }
 
     void write(int now) const {
@@ -27,7 +36,7 @@ struct TSwitch {
                 (httpSwitch ? "on" : "off")
             );
         }
-        const int new_state = ((!light or light->IsDark()) and httpSwitch) ? HIGH : LOW;
+        const int new_state = (httpSwitch and (!light or light->IsDark())) ? HIGH : LOW;
         if (new_state != state) {
             digitalWrite(pin, new_state);
             state = new_state;
