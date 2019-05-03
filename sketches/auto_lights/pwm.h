@@ -35,6 +35,7 @@ struct TPwm {
                 {"Range", String(range)},
                 {"HttpEnabled", this->httpSwitch ? "on" : "off"},
                 {"Light", this->light.IsDark() ? "dark" : "not dark"},
+                {"EnabledPeriod", this->enabled[enabled_i] ? "yes" : "no"},
                 {"SwitchedOn", this->isSwitchedOn() ? "yes" : "no"}
             };
         });
