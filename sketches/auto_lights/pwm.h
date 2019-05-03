@@ -14,7 +14,7 @@ struct TPwm {
     const TLightSensor& light;
     uint64_t ms_per_step = 5;
 
-    TPwm(int pin, std::vector<bool>&& enabled, bool& httpSwitch, const TLightSensor& light, int period = 5)
+    TPwm(int pin, std::vector<bool>&& enabled, bool& httpSwitch, const TLightSensor& light, int id, const char* description, int period = 5)
     : pin(pin)
     , enabled(std::move(enabled))
     , httpSwitch(httpSwitch)
@@ -27,13 +27,15 @@ struct TPwm {
             (++*this).write();
         }, ms_per_step);
 
-        Handlers::addDebug("PWM (pin="_str + pin + ")", [this]{
+        String whoami = "PWM '"_str + description + "' (pin=" + pin + ", http id=" + id + ")";
+        Handlers::addDebug(whoami, [this]{
             return std::map<String, String> {
                 {"Value", String(value)},
                 {"Step", String(step)},
                 {"Range", String(range)},
                 {"HttpEnabled", this->httpSwitch ? "on" : "off"},
-                {"Light", this->light.IsDark() ? "dark" : "not dark"}
+                {"Light", this->light.IsDark() ? "dark" : "not dark"},
+                {"SwitchedOn", this->isSwitchedOn() ? "yes" : "no"}
             };
         });
     }
@@ -48,8 +50,12 @@ struct TPwm {
         return *this;
     }
 
+    bool isSwitchedOn() const {
+        return httpSwitch and light.IsDark() and enabled[enabled_i];
+    }
+
     void write() {
-        if (httpSwitch and light.IsDark() and enabled[enabled_i])
+        if (isSwitchedOn())
             analogWrite(pin, value);
         else
             analogWrite(pin, 0);

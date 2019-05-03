@@ -5,7 +5,7 @@
 
 struct TLightSensor {
     int pin = A0;
-    int Darkness = 400; // 0 .. 1024
+    int Darkness = 450; // 0 .. 1024
     static constexpr int Hysteresis_s = 10;
 
     TLightSensor(String&& name) {

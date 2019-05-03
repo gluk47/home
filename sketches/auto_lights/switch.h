@@ -9,7 +9,7 @@ struct TSwitch {
     const bool& httpSwitch;
     const TLightSensor* light = {};
 
-    TSwitch(int pin, const bool& http, const TLightSensor* light = nullptr)
+    TSwitch(int pin, const bool& http, const TLightSensor* light, int id, const char* description)
     : pin(pin)
     , httpSwitch(http)
     , light(light) {
@@ -19,7 +19,8 @@ struct TSwitch {
             write(when);
         });
 
-        Handlers::addDebug("Switch (pin="_str + pin + ")", [this]{
+        String whoami = "Switch '"_str + description + "' (pin=" + pin + ", http id=" + id + ")";
+        Handlers::addDebug(whoami, [this]{
             return std::map<String, String> {
                 {"State", state == LOW ? "off" : "on"},
                 {"HttpEnabled", httpSwitch ? "on" : "off"},

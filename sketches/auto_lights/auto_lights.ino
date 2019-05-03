@@ -38,20 +38,20 @@ THttpInterface Http(HttpSensor, LightSensor, 80);
 WifiClient wifi(NConfig::essid, NConfig::wifi_password);
 Ota ota(NConfig::hostname, NConfig::ota_pass_md5);
 TLcd lcd(wifi);
-
+#define PWM_INDOOR
 const TSwitch Switches[] = {
 #ifndef PWM_INDOOR
-  {Pins::Indoor[0], HttpSensor[THttpSensor::EIndoor], &LightSensor},
-  {Pins::Indoor[1], HttpSensor[THttpSensor::EIndoor], &LightSensor},
+  {Pins::Indoor[0], HttpSensor[THttpSensor::EIndoor], &LightSensor, THttpSensor::EIndoor, "Indoor"},
+  {Pins::Indoor[1], HttpSensor[THttpSensor::EIndoor], &LightSensor, THttpSensor::EIndoor, "Indoor"},
 #endif
-  {Pins::OutdoorPass, HttpSensor[THttpSensor::EOutdoorPass], &LightSensor},
-  {Pins::OutdoorDoor, HttpSensor[THttpSensor::EOutdoorDoor], &LightSensor}
+  {Pins::OutdoorPass, HttpSensor[THttpSensor::EOutdoorPass], &LightSensor, THttpSensor::EOutdoorPass, "Дом у сарая"},
+  {Pins::OutdoorDoor, HttpSensor[THttpSensor::EOutdoorDoor], &LightSensor, THttpSensor::EOutdoorDoor, "Дом у двери"}
 };
 
 TPwm Pwms[] = {
 #ifdef PWM_INDOOR
-  {Pins::Indoor[0], {1, 1, 0, 0, 1, 0}, HttpSensor[THttpSensor::EIndoor], LightSensor},
-  {Pins::Indoor[1], {0, 0, 1, 1, 0, 1}, HttpSensor[THttpSensor::EIndoor], LightSensor}
+  {Pins::Indoor[0], {1, 1, 0, 0, 1, 0}, HttpSensor[THttpSensor::EIndoor], LightSensor, THttpSensor::EIndoor, "Indoor"},
+  {Pins::Indoor[1], {0, 0, 1, 1, 0, 1}, HttpSensor[THttpSensor::EIndoor], LightSensor, THttpSensor::EIndoor, "Indoor"}
 #endif
 };
 
