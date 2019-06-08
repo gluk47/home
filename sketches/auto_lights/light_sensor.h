@@ -6,7 +6,7 @@
 struct TLightSensor {
     int pin = A0;
     int Darkness = 450; // 0 .. 1024
-    static constexpr int Hysteresis_s = 10;
+    static constexpr int Hysteresis_ms = 250;
 
     TLightSensor(String&& name) {
         pinMode(pin, INPUT);
@@ -44,10 +44,13 @@ void TLightSensor::update(int ms) {
     hysteresis = max(0, hysteresis - timePassed);
     lastUpdate = ms;
     bool wasDark = IsDarkNow();
+    int oldValue = value_;
     value_ = analogRead(pin);
     bool becameDark = IsDarkNow();
-    if (wasDark ^ becameDark)
-        hysteresis = Hysteresis_s * 1000;
+    if (wasDark ^ becameDark) {
+        int diff = abs(value_ - oldValue);
+        hysteresis = Hysteresis_ms + Hysteresis_ms * (diff < 50) * 2 + Hysteresis_ms * (diff < 100) + Hysteresis_ms * (diff < 150) * .5;
+    }
     //Serial.printf("light: %d\n", value_);
     //if (hysteresis == 0)
     //  Serial.println("Is dark -> %s" + becameDark ? "yes" : "no");

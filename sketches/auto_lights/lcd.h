@@ -8,7 +8,7 @@ class TLcd {
 public:
     TLcd(WifiClient& wifi) {
         Handlers::addInit([this]{
-            lcd.begin(Pins::LCD_SDA, Pins::LCD_SCL);
+            lcd.begin();
             lcd.printstr("  I like wire!");
         });
 
