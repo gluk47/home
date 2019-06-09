@@ -32,12 +32,12 @@
  * Lights can be turned off independently.
  */
 
-TLightSensor LightSensor("front");
+TLightSensor LightSensor;
 THttpSensor& HttpSensor = THttpSensor::the();
 THttpInterface Http(HttpSensor, LightSensor, 80);
 WifiClient wifi(NConfig::essid, NConfig::wifi_password);
 Ota ota(NConfig::hostname, NConfig::ota_pass_md5);
-TLcd lcd(wifi);
+// TLcd lcd(wifi);
 #define PWM_INDOOR
 const TSwitch Switches[] = {
 #ifndef PWM_INDOOR

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include "handlers.h"
 #include <map>
 
@@ -8,12 +9,12 @@ struct TLightSensor {
     int Darkness = 450; // 0 .. 1024
     static constexpr int Hysteresis_ms = 250;
 
-    TLightSensor(String&& name) {
+    TLightSensor() {
         pinMode(pin, INPUT);
         Handlers::add([this](int when){
             update(when);
         });
-        Handlers::addDebug("LightSensor." + name, [this]{ return GetState(); });
+        Handlers::addDebug("LightSensor", [this]{ return GetState(); });
     }
 
     int value() const noexcept { return value_; }
@@ -23,12 +24,12 @@ struct TLightSensor {
     bool IsDarkNow() const { return value_ < Darkness; }
     std::map<String, String> GetState() const {
         return {
-            {"value", String(value_)},
-            {"darkness", String(Darkness)},
-            {"lastUpdate", String(lastUpdate) + " ms"},
-            {"hysteresis", String(hysteresis)},
-            {"IsDark()", IsDark() ? "yes" : "no"},
-            {"IsDarkNow()", IsDarkNow() ? "yes" : "no"}
+            {"Value", String(value_)},
+            {"Darkness", String(Darkness)},
+            {"LastUpdate", String(lastUpdate) + " ms"},
+            {"Hysteresis", String(hysteresis)},
+            {"IsDark()", YesNo(IsDark())},
+            {"IsDarkNow()", YesNo(IsDarkNow())}
         };
     }
 

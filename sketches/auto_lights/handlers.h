@@ -49,8 +49,9 @@ struct Handlers {
         const Handlers& h = the();
         for (const auto& p : h.debugHandlers) {
             const auto& values = p.second();
+            resp += p.first + ":\n";
             for (const auto& v : values) {
-                resp += p.first + "." + v.first + ": " + v.second + "\n";
+                resp += "  " + v.first + ": " + v.second + "\n";
             }
             resp += "\n";
         }

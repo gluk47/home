@@ -27,16 +27,19 @@ struct TPwm {
             (++*this).write();
         }, ms_per_step);
 
-        String whoami = "PWM '"_str + description + "' (pin=" + pin + ", http id=" + id + ")";
-        Handlers::addDebug(whoami, [this]{
+        Handlers::addDebug("PWM_"_str + pin, [=]{
             return std::map<String, String> {
+                {"Type", "PWM"},
+                {"Pin", ToString(pin)},
+                {"HttpId", ToString(id)},
+                {"Name", description},
                 {"Value", String(value)},
                 {"Step", String(step)},
                 {"Range", String(range)},
-                {"HttpEnabled", this->httpSwitch ? "on" : "off"},
+                {"HttpEnabled", OnOff(this->httpSwitch)},
                 {"Light", this->light.IsDark() ? "dark" : "not dark"},
-                {"EnabledPeriod", this->enabled[enabled_i] ? "yes" : "no"},
-                {"SwitchedOn", this->isSwitchedOn() ? "yes" : "no"}
+                {"EnabledPeriod", YesNo(this->enabled[enabled_i])},
+                {"SwitchedOn", YesNo(this->isSwitchedOn())}
             };
         });
     }

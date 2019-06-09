@@ -19,11 +19,14 @@ struct TSwitch {
             write(when);
         });
 
-        String whoami = "Switch '"_str + description + "' (pin=" + pin + ", http id=" + id + ")";
-        Handlers::addDebug(whoami, [this]{
+        Handlers::addDebug("Switch_"_str + pin, [=]{
             return std::map<String, String> {
-                {"State", state == LOW ? "off" : "on"},
-                {"HttpEnabled", httpSwitch ? "on" : "off"},
+                {"Type", "Switch"},
+                {"Pin", ToString(pin)},
+                {"HttpId", ToString(id)},
+                {"Name", description},
+                {"State", OnOff(state != LOW)},
+                {"HttpEnabled", OnOff(httpSwitch)},
                 {"Light", this->light ? (this->light->IsDark() ? "dark" : "not dark") : "no sensor"}
             };
         });
