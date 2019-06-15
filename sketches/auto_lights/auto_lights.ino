@@ -59,10 +59,10 @@ void setup() {
     Serial.begin(115200);
     delay(50);
     Serial.println('\n');
-    Serial.printf("Set delay to %d\n", Handlers::the().get_delay());
+    Serial.printf("Set delay to %d\r\n", Handlers::the().get_delay());
     Handlers::init();
     if (MDNS.begin(NConfig::hostname))
-        Serial.printf("mDNS responder started: %s.local\n", NConfig::hostname);
+        Serial.printf("mDNS responder started: %s.local\r\n", NConfig::hostname);
     else
         Serial.println("Error setting up MDNS responder!");
     Serial.println("Setup done\n");

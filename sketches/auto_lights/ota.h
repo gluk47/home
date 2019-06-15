@@ -28,7 +28,7 @@ public:
                     Serial.printf("\r[OTA update] %u%%", perc);
                     this->perc = perc;
                     if (perc == 100)
-                        Serial.printf("\n");
+                        Serial.println("");
                 }
             });
 

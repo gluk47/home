@@ -35,7 +35,7 @@ struct TSwitch {
     void write(int now) const {
         if (now != last_report && now % 5000 < 10) {
             last_report = now;
-            Serial.printf("[pin %d] IsDark? %s; http? %s\n", pin,
+            Serial.printf("[pin %d] IsDark? %s; http? %s\r\n", pin,
                 (light ? (light->IsDark() ? "yes" : "no") : "null"),
                 (httpSwitch ? "on" : "off")
             );

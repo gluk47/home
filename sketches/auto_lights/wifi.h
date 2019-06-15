@@ -16,7 +16,7 @@ struct WifiClient {
         if (WiFi.status() == WL_CONNECTED)
             return;
 
-        Serial.printf("Connecting to %s...\n", essid);
+        Serial.printf("Connecting to %s... ", essid);
         WiFi.begin(essid, password);
 
         for (int i = 0; WiFi.status() != WL_CONNECTED; ++i) {
@@ -24,7 +24,7 @@ struct WifiClient {
             Serial.printf("%d ", i);
         }
 
-        Serial.printf("\nConnection established!\nIP address:\t");
+        Serial.printf("\r\nConnection established!\r\nIP address:\t");
         Serial.println(ip_ = WiFi.localIP().toString());
     }
 

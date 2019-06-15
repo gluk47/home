@@ -81,7 +81,7 @@ private:
         httpSensor[id] = state;
         // Behave nice with web-interface
         Server.sendHeader("Location","/");
-        Server.send(303);
+        Server.send(303, "text/plain", "OK\n");
     }
 
     static constexpr const char* help_set_darkness = "arg: int threshold. Set, when it is dark (see also 'get').";
