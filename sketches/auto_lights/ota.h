@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include "handlers.h"
 #include <ArduinoOTA.h>
 #include <unordered_map>
@@ -18,6 +19,7 @@ public:
     Ota(const char* hostname, const char* pass) {
         Handlers::addInit([hostname, pass, this]{
             ArduinoOTA.setHostname(hostname);
+            Serial.println("[OTA update] set up mDNS to "_str + hostname + ".local (install avahi/bonjour and ping that host)");
             ArduinoOTA.setPasswordHash(pass);
 
             ArduinoOTA.onStart([this]{ Serial.println("[OTA update] Started" ); this->perc = -1; });

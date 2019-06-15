@@ -12,8 +12,6 @@
 #include "common.h"
 #include "config.h"
 
-#include <ESP8266mDNS.h>
-
 #include <cstdlib>
 #include <vector>
 
@@ -61,10 +59,6 @@ void setup() {
     Serial.println('\n');
     Serial.printf("Set delay to %d\r\n", Handlers::the().get_delay());
     Handlers::init();
-    if (MDNS.begin(NConfig::hostname))
-        Serial.printf("mDNS responder started: %s.local\r\n", NConfig::hostname);
-    else
-        Serial.println("Error setting up MDNS responder!");
     Serial.println("Setup done\n");
 }
 
