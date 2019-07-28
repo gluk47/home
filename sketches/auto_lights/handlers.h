@@ -1,5 +1,8 @@
 #pragma once
 
+#include <WString.h>
+
+#include <chrono>
 #include <functional>
 #include <map>
 #include <vector>
@@ -11,12 +14,12 @@ struct Handlers {
     }
 
     static void delay() {
-        ::delay(the().get_delay());
+        ::delay(the().get_delay().count());
     }
 
-    static void add(std::function<void(int)>&& f, int period_ms = 250) {
+    static void add(std::function<void(std::chrono::milliseconds)>&& f, std::chrono::milliseconds period = 250ms) {
         auto& h = the();
-        h.handlers[period_ms].functions.push_back(std::move(f));
+        h.handlers[period].functions.push_back(std::move(f));
         h.delay_ = h.handlers.begin()->first;
     }
 
@@ -35,10 +38,10 @@ struct Handlers {
     }
 
     static void handle() {
-        int now = millis();
+        std::chrono::milliseconds now(millis());
         const Handlers& h = the();
         for (const auto& handle : h.handlers) {
-            int period = handle.first;
+            std::chrono::milliseconds period = handle.first;
             if (!handle.second.run(now, period))
                 return;
         }
@@ -58,15 +61,15 @@ struct Handlers {
         return resp;
     }
 
-    int get_delay() const {
+    std::chrono::milliseconds get_delay() const {
         return delay_;
     }
 
 private:
     struct THandlersSamePeriod {
-        std::vector<std::function<void(int)>> functions;
-        mutable int last_execution = -1024;
-        bool run(int now, int period) const {
+        std::vector<std::function<void(std::chrono::milliseconds)>> functions;
+        mutable std::chrono::milliseconds last_execution = -1024ms;
+        bool run(std::chrono::milliseconds now, std::chrono::milliseconds period) const {
             if (now > last_execution && now - last_execution < period)
                 return false;
             last_execution = now;
@@ -77,8 +80,8 @@ private:
     };
 
     Handlers() = default;
-    std::map<int, THandlersSamePeriod> handlers;
+    std::map<std::chrono::milliseconds, THandlersSamePeriod> handlers;
     std::vector<std::function<void()>> initters;
     std::vector<std::pair<String, std::function<std::map<String,String>()>>> debugHandlers;
-    int delay_ = 250;
+    std::chrono::milliseconds delay_ = 250ms;
 };

@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Arduino.h>
+#include <WString.h>
+
+#include <chrono>
+
 String operator"" _str(const char* s, size_t) {
     return String(s);
 }
@@ -19,3 +24,75 @@ inline const char* OnOff(bool condition) {
     return condition ? "on" : "off";
 }
 
+std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds before, std::chrono::milliseconds now) {
+    // I assume we store time at least once per 2³² ms, that is more than a month and a half.
+    if (now < before)
+        return std::chrono::milliseconds(std::numeric_limits<int>::max() - before.count() + now.count());
+    else
+        return now - before;
+}
+
+#if __cplusplus < 201402L
+namespace cxx_14 {
+    template <size_t i>
+    struct index_sequence {};
+
+    namespace internal {
+        template <typename T>
+        struct self { using type = T; };
+
+        template <size_t n, size_t... is>
+        struct make_index_sequence {
+            using type = typename std::conditional
+                   <n == 0,
+                    self<index_sequence<is...>>,
+                    make_index_sequence<n - 1, n - 1, is...>
+                   >::type::type;
+        };
+    }
+    
+    template <size_t n>
+    using make_index_sequence = typename internal::make_index_sequence<n>::type;
+}
+
+namespace std {
+    namespace chrono_literals {
+        constexpr std::chrono::milliseconds operator "" ms(unsigned long long ms)
+        {
+            return std::chrono::milliseconds(ms);
+        }
+    }
+
+    using cxx_14::index_sequence;
+    using cxx_14::make_index_sequence;
+}
+#endif  // pre-C++14
+
+using namespace std::chrono_literals;
+
+#if __cplusplus < 201703L
+    namespace cxx_17 {
+        namespace internal {
+            template <class F, class Tuple, std::size_t... I>
+            constexpr auto apply_impl(F&& f, Tuple&& t, std::index_sequence<I...>) -> decltype(f(std::get<I>(std::forward<Tuple>(t))...)) {
+                return f(std::get<I>(std::forward<Tuple>(t))...);
+            }
+        }
+         
+        template <class F, class Tuple>
+        constexpr auto apply(F&& f, Tuple&& t) -> decltype(internal::apply_impl(
+                std::forward<F>(f), std::forward<Tuple>(t),
+                std::make_index_sequence<std::tuple_size<std::remove_reference<Tuple>::type>::value>{}
+            )) {
+            return internal::apply_impl(
+                std::forward<F>(f), std::forward<Tuple>(t),
+                std::make_index_sequence<std::tuple_size<std::remove_reference<Tuple>::type>::value>{}
+            );
+        }
+    }
+    
+    namespace std {
+        using cxx17::apply;
+    }
+
+#endif  // pre-c++17

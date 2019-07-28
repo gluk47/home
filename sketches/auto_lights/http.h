@@ -1,12 +1,12 @@
 #pragma once
 #include "pins.h"
+#include <array>
 
 struct THttpSensor {
     enum light_t {
         EInvalid,
         EIndoor,
-        EOutdoorDoor,
-        EOutdoorPass,
+        EOutdoor,
         EUnused
     };
     std::array<bool, EUnused + 1> enabled;
@@ -39,3 +39,11 @@ private:
         enabled.fill(true);
     }
 };
+
+struct THttpController {
+    bool ShouldSwitchOn() const {
+        return sensor;
+    };
+
+    const bool& sensor;
+}

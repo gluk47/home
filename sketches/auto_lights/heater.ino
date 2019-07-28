@@ -1,0 +1,1 @@
+/home/gluk47/Yandex.Disk/scripts/assistant/home/sketches/auto_lights/heater.cpp

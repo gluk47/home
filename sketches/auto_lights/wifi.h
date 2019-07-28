@@ -9,7 +9,7 @@ struct WifiClient {
     {
         WiFi.mode(WIFI_STA);
         Handlers::addInit([this] { reconnect(); });
-        Handlers::add([this](int){ reconnect(); });
+        Handlers::add([this](std::chrono::milliseconds){ reconnect(); });
     }
 
     void reconnect() {
@@ -19,13 +19,17 @@ struct WifiClient {
         Serial.printf("Connecting to %s... ", essid);
         WiFi.begin(essid, password);
 
-        for (int i = 0; WiFi.status() != WL_CONNECTED; ++i) {
+        for (int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; ++i) {
             delay(1000);
             Serial.printf("%d ", i);
         }
 
-        Serial.printf("\r\nConnection established!\r\nIP address:\t");
-        Serial.println(ip_ = WiFi.localIP().toString());
+        if (WiFi.status() == WL_CONNECTED) {
+            Serial.printf("\r\nConnection established!\r\nIP address:\t");
+            Serial.println(ip_ = WiFi.localIP().toString());
+        } else {
+            Serial.println("\r\nConnection failed");
+        }
     }
 
     const String& ip() const {

@@ -2,63 +2,79 @@
 
 #include "common.h"
 #include "handlers.h"
+#include <chrono>
 #include <map>
 
 struct TLightSensor {
     int pin = A0;
-    int Darkness = 450; // 0 .. 1024
-    static constexpr int Hysteresis_ms = 250;
+    int Darkness = 500; // 0 .. 1024
+    int Hysteresis = 50; // distance to darkness to switch the reported state
+    std::chrono::milliseconds StabilizationDelay = 250ms;
 
     TLightSensor() {
         pinMode(pin, INPUT);
-        Handlers::add([this](int when){
-            update(when);
+        Handlers::add([this](std::chrono::milliseconds when){
+            Update(when);
         });
         Handlers::addDebug("LightSensor", [this]{ return GetState(); });
     }
 
-    int value() const noexcept { return value_; }
-    void update(int when);
-    // with hysteresis
+    int Value() const noexcept { return Value_; }
+    void Update(std::chrono::milliseconds when);
+    // with stabilizationDelay
     bool IsDark() const;
-    bool IsDarkNow() const { return value_ < Darkness; }
+    bool IsDarkNow() const {
+        if (IsDark_)
+            return Value_ < Darkness + Hysteresis;
+        else
+            return Value_ > Darkness - Hysteresis;
+    }
     std::map<String, String> GetState() const {
         return {
-            {"Value", String(value_)},
             {"Darkness", String(Darkness)},
-            {"LastUpdate", String(lastUpdate) + " ms"},
-            {"Hysteresis", String(hysteresis)},
+            {"DelayLeft", String(TimeToStabilize)},
+            {"Hysteresis", String(Hysteresis)},
             {"IsDark()", YesNo(IsDark())},
             {"IsDarkNow()", YesNo(IsDarkNow())}
+            {"LastUpdate", String(LastUpdate) + " ms"},
+            {"Value", String(Value_)},
         };
     }
 
 private:
-    int value_ = 1024;
-    int hysteresis = 0;
-    mutable bool isDark_ = true;
-    int lastUpdate = -1;
+    int Value_ = 1024;
+    int TimeToStabilize = 0;
+    mutable bool IsDark_ = true;
+    std::chrono::milliseconds LastUpdate{0};
 };
 
-void TLightSensor::update(int ms) {
-    int timePassed = ms > lastUpdate ? ms - lastUpdate : ms;
-    hysteresis = max(0, hysteresis - timePassed);
-    lastUpdate = ms;
+void TLightSensor::Update(std::chrono::milliseconds now) {
+    int timePassed = BoardTimeDifference(LastUpdate, now);
+    TimeToStabilize = timePassed > TimeToStabilize ? 0 : TimeToStabilize - timePassed;
+    LastUpdate = now;
     bool wasDark = IsDarkNow();
-    int oldValue = value_;
-    value_ = analogRead(pin);
+    int oldValue = Value_;
+    Value_ = analogRead(pin);
     bool becameDark = IsDarkNow();
     if (wasDark ^ becameDark) {
-        int diff = abs(value_ - oldValue);
-        hysteresis = Hysteresis_ms + Hysteresis_ms * (diff < 50) * 2 + Hysteresis_ms * (diff < 100) + Hysteresis_ms * (diff < 150) * .5;
+        int diff = abs(Value_ - oldValue);
+        TimeToStabilize = Stabilization_ms + Stabilization_ms * (diff < 50) * 4 + Stabilization_ms * (diff < 100) * 2 + Stabilization_ms * (diff < 150);
     }
-    //Serial.printf("light: %d\n", value_);
-    //if (hysteresis == 0)
+    //Serial.printf("light: %d\n", Value_);
+    //if (TimeToStabilize == 0)
     //  Serial.println("Is dark -> %s" + becameDark ? "yes" : "no");
 }
 
 bool TLightSensor::IsDark() const {
-    if (hysteresis <= 0)
-        isDark_ = IsDarkNow();
-    return isDark_;
+    if (TimeToStabilize <= 0)
+        IsDark_ = IsDarkNow();
+    return IsDark_;
+}
+
+struct TNightLightController {
+    bool ShouldSwitchOn() const {
+        return sensor.IsDark();
+    };
+
+    const TLightSensor& sensor;
 }

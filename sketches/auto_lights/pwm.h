@@ -23,7 +23,7 @@ struct TPwm {
         pinMode(pin, OUTPUT);
         digitalWrite(pin, LOW);
 
-        Handlers::add([this](int){
+        Handlers::add([this](std::chrono::milliseconds){
             (++*this).write();
         }, ms_per_step);
 

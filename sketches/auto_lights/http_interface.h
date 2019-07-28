@@ -11,7 +11,7 @@
 
 class THttpInterface {
 public:
-    THttpInterface(THttpSensor& httpSensor, TLightSensor& lightSensor, uint16_t port = 80)
+    THttpInterface(THttpSensor& httpSensor, uint16_t port = 80, TLightSensor* lightSensor = nullptr)
     : httpSensor(httpSensor)
     , lightSensor(lightSensor)
     , Server(port) {
@@ -30,6 +30,10 @@ public:
 
         Handlers::addInit([this]{ Server.begin(); });
         Handlers::add([this](int){ Server.handleClient(); }, 100);
+    }
+
+    void SetLightSensor(TLightSensor* lightSensor) noexcept {
+        lightSensor = lightSensor;
     }
 
 private:
@@ -86,20 +90,24 @@ private:
 
     static constexpr const char* help_set_darkness = "arg: int threshold. Set, when it is dark (see also 'get').";
     void set_darkness() {
+        if (no_light_sensor())
+            return;
         int threshold = Server.arg("threshold").toInt();
         Serial.println("set_darkness: "_str + threshold);
         if (threshold <= 0 || threshold > 1024) {
             Server.send(400, "text/plain", "out of range");
             return;
         }
-        lightSensor.Darkness = threshold;
+        lightSensor->Darkness = threshold;
         Server.sendHeader("Location","/");
         Server.send(303);
     }
 
     static constexpr const char* help_get_light = "get the current brightness level (see also 'set').";
     void get_light() {
-        Server.send(200, "text/plain", ""_str + lightSensor.value() + "\n");
+        if (no_light_sensor())
+            return;
+        Server.send(200, "text/plain", ""_str + lightSensor->value() + "\n");
     }
 
     static constexpr const char* help_get_debug = "Get all available debug info";
@@ -116,8 +124,13 @@ private:
         Server.send(200, "text/plain", help);
     }
 
+    bool no_light_sensor() {
+        if (!lightSensor)
+            Server.send(500, "text/plain", "there is no light sensor")
+    }
+
     THttpSensor& httpSensor;
-    TLightSensor& lightSensor;
+    TLightSensor* lightSensor;
     ESP8266WebServer Server;
     struct THelpItem {
         const char* method;

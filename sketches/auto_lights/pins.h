@@ -1,9 +1,12 @@
 #pragma once
 
-struct Pins {
-    constexpr static int
+#include <Arduino.h>
+
+namespace Pins {
+    constexpr int
         No = -1,
-        Indoor[] = { D1, D2 },
-        OutdoorDoor = D5,
-        OutdoorPass = D6;
+        Indoor[] = { D5, D2 },
+        Outdoor = D1,
+        DHT = D4,
+        Heater = D1;
 };
