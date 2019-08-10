@@ -46,20 +46,26 @@ public:
 private:
     template <typename... Sensors>
     static bool AllSensorsAreOn(Sensors&&... s) {
-        return (s.ShouldSwitchOn() && ...);
+        return true; //((s) && ...); // ((s.ShouldSwitchOn()) && ...);
     }
 
     template <typename... Switches>
     static bool ChangeNeeded(bool desired, Switches&&... s) {
-        return ((s.TurnedOn() != desired) && ...);
+        return true ;//(s && ...); // ((s.TurnedOn() != desired) && ...);
     }
 
     template <typename... Switches>
     static void TurnOn(bool state, Switches&&... s) {
-        (s.TurnOn(state), ...);
+        //(s && ...); // ((s.TurnOn(state)), ...);
     }
 
     std::chrono::milliseconds LastSwitch{0};
     const TLightSensors& Sensors;
     TSwitches& Switches;
 };
+
+// TODO use deduction guides as soon as xtensa toolchain suports them
+template <typename TLightSensors, typename TSwitches>
+TController<TLightSensors, TSwitches> MakeController(TLightSensors&& sensors, TSwitches&& switches) {
+    return TController<TLightSensors, TSwitches>(std::forward(sensors), std::forward(switches));
+}

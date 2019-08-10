@@ -9,7 +9,7 @@ struct TDht {
             const float t = sensor.readTemperature();
             const float h = sensor.readHumidity();
             return std::map<String, String>{
-                {"FeelsLike", sensor.computeHeatIndex(t, h)},
+                {"FeelsLike", String(sensor.computeHeatIndex(t, h))},
                 {"Humidity", String(h)},
                 {"Temperature", String(t)}
             };

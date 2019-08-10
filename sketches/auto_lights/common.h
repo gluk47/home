@@ -32,6 +32,10 @@ std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds before, 
         return now - before;
 }
 
+String ToString(const std::chrono::milliseconds& ms) {
+    return String(static_cast<long>(ms.count())) + " ms";
+}
+
 #if __cplusplus < 201402L
 namespace cxx_14 {
     template <size_t i>
@@ -50,7 +54,7 @@ namespace cxx_14 {
                    >::type::type;
         };
     }
-    
+
     template <size_t n>
     using make_index_sequence = typename internal::make_index_sequence<n>::type;
 }
@@ -78,21 +82,21 @@ using namespace std::chrono_literals;
                 return f(std::get<I>(std::forward<Tuple>(t))...);
             }
         }
-         
+
         template <class F, class Tuple>
         constexpr auto apply(F&& f, Tuple&& t) -> decltype(internal::apply_impl(
                 std::forward<F>(f), std::forward<Tuple>(t),
-                std::make_index_sequence<std::tuple_size<std::remove_reference<Tuple>::type>::value>{}
+                std::make_index_sequence<std::tuple_size<typename std::remove_reference<Tuple>::type>::value>{}
             )) {
             return internal::apply_impl(
                 std::forward<F>(f), std::forward<Tuple>(t),
-                std::make_index_sequence<std::tuple_size<std::remove_reference<Tuple>::type>::value>{}
+                std::make_index_sequence<std::tuple_size<typename std::remove_reference<Tuple>::type>::value>{}
             );
         }
     }
-    
+
     namespace std {
-        using cxx17::apply;
+        using cxx_17::apply;
     }
 
 #endif  // pre-c++17

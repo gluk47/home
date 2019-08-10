@@ -57,7 +57,7 @@ TPwm Pwms[] = {
 
 TSwitch DoorLight(Pins::OutdoorPass, THttpSensor::EOutdoor, "Внешний свет");
 
-TController FrontLights(
+auto FrontLights = MakeController(
     std::make_tuple(DoorLight),
     std::make_tuple(LightControl, HttpControl{HttpSensor[THttpSensor::EOutdoor]}),
 );

@@ -46,4 +46,4 @@ struct THttpController {
     };
 
     const bool& sensor;
-}
+};
