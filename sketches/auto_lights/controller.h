@@ -8,7 +8,6 @@
 #include <utility>
 
 // A controller that decides whether a switch should be turned on or off
-
 class IController {
 public:
     IController() {
@@ -20,45 +19,75 @@ public:
     virtual void Update(std::chrono::milliseconds when) = 0;
 };
 
+namespace NController {
+    // TODO move these helpers as lambdas as soon as C++17 is fully supported
+    struct TAllOn {
+        template <typename... TSensors>
+        bool operator()(TSensors&&... sensors) {
+            return TurnedOn(sensors...);
+        }
+
+    private:
+        template <typename T>
+        bool TurnedOn(const T& s) {
+            return s.TurnedOn();
+        }
+
+        template <typename S, typename... Ss>
+        bool TurnedOn(const S& s, const Ss&... ss) {
+            return s.TurnedOn() and TurnedOn(ss...);
+        }
+    };
+
+    struct TIsChangeNeeded {
+        bool Desired = false;
+
+        TIsChangeNeeded(bool desired) : Desired(desired){}
+
+        template <typename... T>
+        bool operator()(T&&...) {
+            return true;
+        }
+    };
+
+    struct TTurnOn {
+        bool Desired = false;
+
+        TTurnOn(bool desired) : Desired(desired){}
+
+        template <typename... T>
+        void operator()(T&&...) {
+            return;
+        }
+    };
+}
+
 template <typename TLightSensors, typename TSwitches>
 class TController : public IController {
 public:
     std::chrono::milliseconds MinimalDelay;
 
     TController(const TLightSensors& sensors, TSwitches& switches, std::chrono::milliseconds minimalDelay = 1000ms)
-    : Sensors(sensors)
-    , Switches(switches)
-    , MinimalDelay(minimalDelay) {
+    : MinimalDelay(minimalDelay)
+    , Sensors(sensors)
+    , Switches(switches) {
     }
 
     void Update(std::chrono::milliseconds now) override {
         if (BoardTimeDifference(LastSwitch, now) < MinimalDelay)
             return;
 
-        const bool desired = std::apply(AllSensorsAreOn, Sensors);
-        const bool actual = std::apply(ChangeNeeded, std::tuple_cat(desired, Switches));
+        using namespace NController;
+        const bool desired = std::apply(TAllOn(), Sensors);
+        const bool actual = std::apply(TIsChangeNeeded{desired}, Switches);
+
         if (desired != actual) {
             LastSwitch = now;
-            std::apply(TurnOn, std::tuple_cat(desired, Sensors));
+            std::apply(TTurnOn{desired}, Sensors);
         }
     }
 
 private:
-    template <typename... Sensors>
-    static bool AllSensorsAreOn(Sensors&&... s) {
-        return true; //((s) && ...); // ((s.ShouldSwitchOn()) && ...);
-    }
-
-    template <typename... Switches>
-    static bool ChangeNeeded(bool desired, Switches&&... s) {
-        return true ;//(s && ...); // ((s.TurnedOn() != desired) && ...);
-    }
-
-    template <typename... Switches>
-    static void TurnOn(bool state, Switches&&... s) {
-        //(s && ...); // ((s.TurnOn(state)), ...);
-    }
-
     std::chrono::milliseconds LastSwitch{0};
     const TLightSensors& Sensors;
     TSwitches& Switches;
@@ -67,5 +96,5 @@ private:
 // TODO use deduction guides as soon as xtensa toolchain suports them
 template <typename TLightSensors, typename TSwitches>
 TController<TLightSensors, TSwitches> MakeController(TLightSensors&& sensors, TSwitches&& switches) {
-    return TController<TLightSensors, TSwitches>(std::forward(sensors), std::forward(switches));
+    return TController<TLightSensors, TSwitches>(std::forward<const TLightSensors&>(sensors), std::forward<TSwitches&>(switches));
 }

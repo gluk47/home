@@ -5,7 +5,7 @@
 
 #include <chrono>
 
-String operator"" _str(const char* s, size_t) {
+inline String operator"" _str(const char* s, size_t) {
     return String(s);
 }
 
@@ -24,7 +24,7 @@ inline const char* OnOff(bool condition) {
     return condition ? "on" : "off";
 }
 
-std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds before, std::chrono::milliseconds now) {
+inline std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds before, std::chrono::milliseconds now) {
     // I assume we store time at least once per 2³² ms, that is more than a month and a half.
     if (now < before)
         return std::chrono::milliseconds(std::numeric_limits<int>::max() - before.count() + now.count());
@@ -32,44 +32,46 @@ std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds before, 
         return now - before;
 }
 
-String ToString(const std::chrono::milliseconds& ms) {
+inline String ToString(const std::chrono::milliseconds& ms) {
     return String(static_cast<long>(ms.count())) + " ms";
 }
 
 #if __cplusplus < 201402L
-namespace cxx_14 {
-    template <size_t i>
-    struct index_sequence {};
+    namespace cxx_14 {
+        template <size_t... i>
+        struct index_sequence {};
 
-    namespace internal {
-        template <typename T>
-        struct self { using type = T; };
+        namespace internal {
+            template <typename T>
+            struct self { using type = T; };
 
-        template <size_t n, size_t... is>
-        struct make_index_sequence {
-            using type = typename std::conditional
-                   <n == 0,
-                    self<index_sequence<is...>>,
-                    make_index_sequence<n - 1, n - 1, is...>
-                   >::type::type;
-        };
-    }
+            template <size_t n, size_t... is>
+            struct make_index_sequence : public make_index_sequence<n - 1, n - 1, is...>
+            {};
 
-    template <size_t n>
-    using make_index_sequence = typename internal::make_index_sequence<n>::type;
-}
-
-namespace std {
-    namespace chrono_literals {
-        constexpr std::chrono::milliseconds operator "" ms(unsigned long long ms)
-        {
-            return std::chrono::milliseconds(ms);
+            template <size_t... is>
+            struct make_index_sequence<0u, is...> {
+                using type = index_sequence<is...>;
+            };
         }
+
+        template <size_t n>
+        using make_index_sequence = typename internal::make_index_sequence<n>::type;
+
+        using one_seq = make_index_sequence<1>;
     }
 
-    using cxx_14::index_sequence;
-    using cxx_14::make_index_sequence;
-}
+    namespace std {
+        namespace chrono_literals {
+            constexpr std::chrono::milliseconds operator "" ms(unsigned long long ms)
+            {
+                return std::chrono::milliseconds(ms);
+            }
+        }
+
+        using cxx_14::index_sequence;
+        using cxx_14::make_index_sequence;
+    }
 #endif  // pre-C++14
 
 using namespace std::chrono_literals;

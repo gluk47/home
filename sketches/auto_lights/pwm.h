@@ -12,20 +12,28 @@ struct TPwm {
     int enabled_i = 0;
     const bool& httpSwitch;
     const TLightSensor& light;
-    uint64_t ms_per_step = 5;
+    std::chrono::milliseconds StepDuration = 5ms;
 
-    TPwm(int pin, std::vector<bool>&& enabled, bool& httpSwitch, const TLightSensor& light, int id, const char* description, int period = 5)
+    TPwm(
+        int pin,
+         std::vector<bool>&& enabled,
+         bool& httpSwitch,
+         const TLightSensor& light,
+         int id,
+         const char* description,
+         std::chrono::milliseconds period = 5ms
+    )
     : pin(pin)
     , enabled(std::move(enabled))
     , httpSwitch(httpSwitch)
     , light(light)
-    , ms_per_step(period) {
+    , StepDuration(period) {
         pinMode(pin, OUTPUT);
         digitalWrite(pin, LOW);
 
         Handlers::add([this](std::chrono::milliseconds){
             (++*this).write();
-        }, ms_per_step);
+        }, StepDuration);
 
         Handlers::addDebug("PWM_"_str + pin, [=]{
             return std::map<String, String> {

@@ -12,7 +12,7 @@ public:
             lcd.printstr("  I like wire!");
         });
 
-        Handlers::add([this, &wifi](int){
+        Handlers::add([this, &wifi](std::chrono::milliseconds){
             const String& new_ip = wifi.ip();
             if (new_ip == last_ip)
                 return;
@@ -22,7 +22,7 @@ public:
             snprintf(out, sizeof(out), "%16s", new_ip.c_str());
             Serial.println(out);
             lcd.printstr(out);
-        }, 1000);
+        }, 1000ms);
     }
 
 private:

@@ -1,1 +1,1 @@
-/home/gluk47/Yandex.Disk/src/embedded/auto_lights/auto_lights.cpp
+auto_lights.cpp

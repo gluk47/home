@@ -49,7 +49,7 @@ private:
     std::chrono::milliseconds LastUpdate{0};
 };
 
-void TLightSensor::Update(std::chrono::milliseconds now) {
+inline void TLightSensor::Update(std::chrono::milliseconds now) {
     std::chrono::milliseconds timePassed = BoardTimeDifference(LastUpdate, now);
     TimeToStabilize = timePassed > TimeToStabilize ? 0ms : TimeToStabilize - timePassed;
     LastUpdate = now;
@@ -66,7 +66,7 @@ void TLightSensor::Update(std::chrono::milliseconds now) {
     //  Serial.println("Is dark -> %s" + becameDark ? "yes" : "no");
 }
 
-bool TLightSensor::IsDark() const {
+inline bool TLightSensor::IsDark() const {
     if (TimeToStabilize <= 0ms)
         IsDark_ = IsDarkNow();
     return IsDark_;

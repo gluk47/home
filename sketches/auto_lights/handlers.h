@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common.h"
+
 #include <WString.h>
 
 #include <chrono>

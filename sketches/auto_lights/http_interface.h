@@ -29,7 +29,7 @@ public:
 #undef HANDLE
 
         Handlers::addInit([this]{ Server.begin(); });
-        Handlers::add([this](int){ Server.handleClient(); }, 100);
+        Handlers::add([this](std::chrono::milliseconds){ Server.handleClient(); }, 100ms);
     }
 
     void SetLightSensor(TLightSensor* lightSensor) noexcept {
@@ -60,8 +60,8 @@ private:
             const char* labels[] = {
                 "Invalid (should not be seen)",
                 "Indoor",
-                "Left (door) light",
-                "Right (car) light"
+                "Outdoor",
+                "Heater",
             };
             static_assert(sizeof(labels) / sizeof(labels[0]) == THttpSensor::EUnused, "...");
             String ret;
@@ -107,7 +107,7 @@ private:
     void get_light() {
         if (no_light_sensor())
             return;
-        Server.send(200, "text/plain", ""_str + lightSensor->value() + "\n");
+        Server.send(200, "text/plain", ""_str + lightSensor->Value() + "\n");
     }
 
     static constexpr const char* help_get_debug = "Get all available debug info";
@@ -126,7 +126,8 @@ private:
 
     bool no_light_sensor() {
         if (!lightSensor)
-            Server.send(500, "text/plain", "there is no light sensor")
+            Server.send(500, "text/plain", "there is no light sensor");
+        return not lightSensor;
     }
 
     THttpSensor& httpSensor;

@@ -7,6 +7,7 @@ struct THttpSensor {
         EInvalid,
         EIndoor,
         EOutdoor,
+        EHeater,
         EUnused
     };
     std::array<bool, EUnused + 1> enabled;

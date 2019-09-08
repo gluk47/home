@@ -51,7 +51,7 @@ public:
             Serial.println("[OTA update] Setup done");
         });
 
-        Handlers::add([this](int){
+        Handlers::add([this](std::chrono::milliseconds){
             ArduinoOTA.handle();
         });
     }

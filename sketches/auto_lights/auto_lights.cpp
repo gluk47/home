@@ -33,33 +33,42 @@
  * Lights can be turned off independently.
  */
 
+TDefaultSetup dc;
+
 TLightSensor LightSensor;
 TNightLightController LightControl{LightSensor};
-Http.SetLightSensor(&LightSensor);
-// TDht dht(Pins::DHT);
-// TLcd lcd(wifi);
+TSwitch DoorLight(Pins::Outdoor, THttpSensor::EOutdoor, "Внешний свет");
+
+auto FrontLights = MakeController(
+    std::make_tuple(DoorLight),
+    std::make_tuple(LightControl, THttpController{dc.HttpSensor[THttpSensor::EOutdoor]})
+);
+
 #define PWM_INDOOR
 const TSwitch Switches[] = {
     #ifndef PWM_INDOOR
-    {Pins::Indoor[0], HttpSensor[THttpSensor::EIndoor], &LightSensor, THttpSensor::EIndoor, "Indoor"},
-    {Pins::Indoor[1], HttpSensor[THttpSensor::EIndoor], &LightSensor, THttpSensor::EIndoor, "Indoor"},
+    {Pins::Indoor[0], dc.HttpSensor[THttpSensor::EIndoor], "Indoor"},
+    {Pins::Indoor[1], dc.HttpSensor[THttpSensor::EIndoor], "Indoor"},
     #endif
-    {Pins::OutdoorPass, HttpSensor[THttpSensor::EOutdoorPass], &LightSensor, THttpSensor::EOutdoorPass, "Дом у сарая"},
-    {Pins::OutdoorDoor, HttpSensor[THttpSensor::EOutdoorDoor], &LightSensor, THttpSensor::EOutdoorDoor, "Дом у двери"}
+    {Pins::Outdoor, dc.HttpSensor[THttpSensor::EOutdoor], "Внешний свет"},
 };
 
 TPwm Pwms[] = {
     #ifdef PWM_INDOOR
-    {Pins::Indoor[0], {1, 1, 0, 0, 1, 0}, HttpSensor[THttpSensor::EIndoor], LightSensor, THttpSensor::EIndoor, "Indoor"},
-    {Pins::Indoor[1], {0, 0, 1, 1, 0, 1}, HttpSensor[THttpSensor::EIndoor], LightSensor, THttpSensor::EIndoor, "Indoor"}
+    {Pins::Indoor[0], {1, 1, 0, 0, 1, 0}, dc.HttpSensor[THttpSensor::EIndoor], LightSensor, THttpSensor::EIndoor, "Indoor"},
+    {Pins::Indoor[1], {0, 0, 1, 1, 0, 1}, dc.HttpSensor[THttpSensor::EIndoor], LightSensor, THttpSensor::EIndoor, "Indoor"}
     #endif
 };
 
-TSwitch DoorLight(Pins::OutdoorPass, THttpSensor::EOutdoor, "Внешний свет");
+// TDht dht(Pins::DHT);
+// TLcd lcd(wifi);
 
-auto FrontLights = MakeController(
-    std::make_tuple(DoorLight),
-    std::make_tuple(LightControl, HttpControl{HttpSensor[THttpSensor::EOutdoor]}),
-);
+namespace {
+    struct TSetup {
+        TSetup () {
+            dc.Http.SetLightSensor(&LightSensor);
+        }
+    };
+}
 
-(void) FrontLights;
+TSetup cfg;
