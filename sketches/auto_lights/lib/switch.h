@@ -22,7 +22,7 @@ struct TSwitch {
         });
     }
 
-    void TurnOn(bool desired) const {
+    void TurnOn(bool desired) {
         if (SwitchedOn != desired) {
             digitalWrite(pin, desired ? HIGH : LOW);
             SwitchedOn = desired;
@@ -34,6 +34,6 @@ struct TSwitch {
     }
 
 private:
-    mutable bool SwitchedOn = false;
+    bool SwitchedOn = false;
 };
 

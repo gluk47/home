@@ -19,6 +19,12 @@ struct Handlers {
         ::delay(the().get_delay().count());
     }
 
+    /**
+     * The delay precision will be that of the most frequent handler.
+     * E.g. if we have handlers for each 5 and 6 ms, we will actually run the first one once per 1×5 ms,
+     * and the second one once per 2×5 ms, i.e. once per 10 ms instead of 6 ms requested.
+     * As for now this is not an issue, but beware.
+     */
     static void add(std::function<void(std::chrono::milliseconds)>&& f, std::chrono::milliseconds period = 250ms) {
         auto& h = the();
         h.handlers[period].functions.push_back(std::move(f));
@@ -41,8 +47,8 @@ struct Handlers {
 
     static void handle() {
         std::chrono::milliseconds now(millis());
-        const Handlers& h = the();
-        for (const auto& handle : h.handlers) {
+        Handlers& h = the();
+        for (auto& handle : h.handlers) {
             std::chrono::milliseconds period = handle.first;
             if (!handle.second.run(now, period))
                 return;
@@ -70,8 +76,8 @@ struct Handlers {
 private:
     struct THandlersSamePeriod {
         std::vector<std::function<void(std::chrono::milliseconds)>> functions;
-        mutable std::chrono::milliseconds last_execution = -1024ms;
-        bool run(std::chrono::milliseconds now, std::chrono::milliseconds period) const {
+        std::chrono::milliseconds last_execution = -1024ms;
+        bool run(std::chrono::milliseconds now, std::chrono::milliseconds period) {
             if (now > last_execution && now - last_execution < period)
                 return false;
             last_execution = now;

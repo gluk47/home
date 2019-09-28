@@ -45,7 +45,7 @@ struct TLightSensor {
 private:
     int Value_ = 1024;
     std::chrono::milliseconds TimeToStabilize{0};
-    mutable bool IsDark_ = true;
+    bool IsDark_ = true;
     std::chrono::milliseconds LastUpdate{0};
 };
 
@@ -61,14 +61,14 @@ inline void TLightSensor::Update(std::chrono::milliseconds now) {
         int diff = abs(Value_ - oldValue);
         TimeToStabilize = StabilizationDelay + StabilizationDelay * (diff < 50) * 4 + StabilizationDelay * (diff < 100) * 2 + StabilizationDelay * (diff < 150);
     }
+    if (TimeToStabilize <= 0ms)
+        IsDark_ = IsDarkNow();
     //Serial.printf("light: %d\n", Value_);
     //if (TimeToStabilize == 0)
     //  Serial.println("Is dark -> %s" + becameDark ? "yes" : "no");
 }
 
 inline bool TLightSensor::IsDark() const {
-    if (TimeToStabilize <= 0ms)
-        IsDark_ = IsDarkNow();
     return IsDark_;
 }
 
