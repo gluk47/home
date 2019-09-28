@@ -33,8 +33,6 @@ namespace NController {
     struct TIsChangeNeeded {
         bool Desired DEFAULT_VALUE_FOR_AGGREGATE_TYPE(false);
 
-        TIsChangeNeeded(bool desired) : Desired(desired){}
-
         bool operator()() const { return true; }
 
         template <typename TSwitch, typename... TSwitches>
