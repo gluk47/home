@@ -1,19 +1,19 @@
-#include "controller.h"
-#include "dht.h"
-#include "handlers.h"
-#include "http.h"
-#include "http_interface.h"
-#include "lcd.h"
-#include "light_sensor.h"
-#include "main.h"
-#include "ota.h"
-#include "pins.h"
-#include "pwm.h"
-#include "switch.h"
-#include "wifi.h"
+#include "lib/controller.h"
+#include "lib/dht.h"
+#include "lib/handlers.h"
+#include "lib/http.h"
+#include "lib/http_interface.h"
+#include "lib/lcd.h"
+#include "lib/light_sensor.h"
+#include "lib/main.h"
+#include "lib/ota.h"
+#include "lib/pins.h"
+#include "lib/pwm.h"
+#include "lib/switch.h"
+#include "lib/wifi.h"
 
-#include "common.h"
-#include "config.h"
+#include "lib/common.h"
+#include "lib/config.h"
 
 #include <cstdlib>
 #include <vector>
@@ -40,8 +40,8 @@ TNightLightController LightControl{LightSensor};
 TSwitch DoorLight(Pins::Outdoor, THttpSensor::EOutdoor, "Внешний свет");
 
 auto FrontLights = MakeController(
-    std::make_tuple(DoorLight),
-    std::make_tuple(LightControl, THttpController{dc.HttpSensor[THttpSensor::EOutdoor]})
+    std::make_tuple(LightControl, THttpController{dc.HttpSensor[THttpSensor::EOutdoor]}),
+    std::make_tuple(DoorLight)
 );
 
 #define PWM_INDOOR

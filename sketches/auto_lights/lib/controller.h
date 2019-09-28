@@ -20,44 +20,38 @@ public:
 };
 
 namespace NController {
-    // TODO move these helpers as lambdas as soon as C++17 is fully supported
+    // TODO move these helpers as lambdas with ops folding as soon as C++17 is fully supported
     struct TAllOn {
-        template <typename... TSensors>
-        bool operator()(TSensors&&... sensors) {
-            return TurnedOn(sensors...);
-        }
+        bool operator()() const { return true; }
 
-    private:
-        template <typename T>
-        bool TurnedOn(const T& s) {
-            return s.TurnedOn();
-        }
-
-        template <typename S, typename... Ss>
-        bool TurnedOn(const S& s, const Ss&... ss) {
-            return s.TurnedOn() and TurnedOn(ss...);
+        template <typename TSensor, typename... TSensors>
+        bool operator()(TSensor&& s, TSensors&&... sensors) const {
+            return s.ShouldSwitchOn() and operator()(sensors...);
         }
     };
 
     struct TIsChangeNeeded {
-        bool Desired = false;
+        bool Desired DEFAULT_VALUE_FOR_AGGREGATE_TYPE(false);
 
         TIsChangeNeeded(bool desired) : Desired(desired){}
 
-        template <typename... T>
-        bool operator()(T&&...) {
-            return true;
+        bool operator()() const { return true; }
+
+        template <typename TSwitch, typename... TSwitches>
+        bool operator()(TSwitch&& s, TSwitches&&... switches) const {
+            return s.TurnedOn() != Desired and operator()(switches...);
         }
     };
 
     struct TTurnOn {
-        bool Desired = false;
+        bool Desired DEFAULT_VALUE_FOR_AGGREGATE_TYPE(false);
 
-        TTurnOn(bool desired) : Desired(desired){}
+        void operator()() const {}
 
-        template <typename... T>
-        void operator()(T&&...) {
-            return;
+        template <typename TSwitch, typename... TSwitches>
+        void operator()(TSwitch& s, TSwitches&&... ss) const {
+            s.TurnOn(Desired);
+            operator()(ss...);
         }
     };
 }
@@ -83,7 +77,7 @@ public:
 
         if (desired != actual) {
             LastSwitch = now;
-            std::apply(TTurnOn{desired}, Sensors);
+            std::apply(TTurnOn{desired}, Switches);
         }
     }
 

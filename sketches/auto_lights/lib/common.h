@@ -37,6 +37,7 @@ inline String ToString(const std::chrono::milliseconds& ms) {
 }
 
 #if __cplusplus < 201402L
+// before C++14
     namespace cxx_14 {
         template <size_t... i>
         struct index_sequence {};
@@ -63,15 +64,23 @@ inline String ToString(const std::chrono::milliseconds& ms) {
 
     namespace std {
         namespace chrono_literals {
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wliteral-suffix"  // might not work with old GCC as well :(
             constexpr std::chrono::milliseconds operator "" ms(unsigned long long ms)
             {
                 return std::chrono::milliseconds(ms);
             }
+            #pragma GCC diagnostic pop
         }
 
         using cxx_14::index_sequence;
         using cxx_14::make_index_sequence;
     }
+
+#   define DEFAULT_VALUE_FOR_AGGREGATE_TYPE(x)
+#else
+// C++14 and later
+#   define DEFAULT_VALUE_FOR_AGGREGATE_TYPE(x) = x
 #endif  // pre-C++14
 
 using namespace std::chrono_literals;

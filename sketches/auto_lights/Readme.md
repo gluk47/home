@@ -14,5 +14,7 @@ tar xf xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
 ## For Arduino IDE
 
 Edit `~/.arduino15/packages/esp8266/hardware/esp8266/2.5.2/platform.txt`:
-add `-std=c++1y` to `compiler.cpp.flags=` (and make sure install scrips won't override this).
+add `-std=c++11` to `compiler.cpp.flags=` (and make sure install scrips won't override this).
 
+Arduino IDE requires separate folders with .ino files and subfolders for libs.
+These folders are created here with proper symlinks.
