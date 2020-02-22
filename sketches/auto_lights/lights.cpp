@@ -40,6 +40,7 @@ TNightLightController LightControl{LightSensor};
 TSwitch DoorLight(Pins::Outdoor, THttpSensor::EOutdoor, "Внешний свет");
 
 auto FrontLights = MakeController(
+    "Front lights",
     std::make_tuple(LightControl, THttpController{dc.HttpSensor[THttpSensor::EOutdoor]}),
     std::make_tuple(DoorLight)
 );

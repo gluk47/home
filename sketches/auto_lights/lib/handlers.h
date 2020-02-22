@@ -9,6 +9,20 @@
 #include <map>
 #include <vector>
 
+#include <cassert>
+
+class Handler {
+public:
+    Handler(String name, std::chrono::milliseconds period = 250ms);
+
+    virtual void init() {};
+    virtual std::map<String, String> debug() const = 0;
+    virtual void handle(std::chrono::milliseconds now) = 0;
+
+    const std::chrono::milliseconds Period;
+    const String Name;
+};
+
 struct Handlers {
     static Handlers& the() {
         static Handlers h;
@@ -25,32 +39,31 @@ struct Handlers {
      * and the second one once per 2×5 ms, i.e. once per 10 ms instead of 6 ms requested.
      * As for now this is not an issue, but beware.
      */
-    static void add(std::function<void(std::chrono::milliseconds)>&& f, std::chrono::milliseconds period = 250ms) {
-        auto& h = the();
-        h.handlers[period].functions.push_back(std::move(f));
-        h.delay_ = h.handlers.begin()->first;
-    }
-
-    static void addInit(std::function<void()>&& f) {
-        the().initters.push_back(std::move(f));
-    }
-
-    static void addDebug(String name, std::function<std::map<String,String>()>&& f) {
-        the().debugHandlers.push_back({std::move(name), std::move(f)});
+    static void add(Handler& h) {
+        auto& all = the();
+        all.handlersByDelay[h.Period].backends.push_back(&h);
+        all.handlers.push_back(&h);
+        all.delay_ = all.handlersByDelay.begin()->first;
+        Serial.printf(
+            "+ handler '%s' with period %lld, new overall period is %lld\n",
+            h.Name.c_str(), h.Period.count(), all.delay_.count()
+        );
     }
 
     static void init() {
         const Handlers& h = the();
-        for (const auto& handle : h.initters)
-            handle();
+        for (const auto& handle : h.handlers) {
+            Serial.printf("+++ init %s\n", handle->Name.c_str());
+            handle->init();
+            Serial.printf("−−− init %s\n", handle->Name.c_str());
+        }
     }
 
     static void handle() {
         std::chrono::milliseconds now(millis());
         Handlers& h = the();
-        for (auto& handle : h.handlers) {
-            std::chrono::milliseconds period = handle.first;
-            if (!handle.second.run(now, period))
+        for (auto& handle : h.handlersByDelay) {
+            if (!handle.second.run(now))
                 return;
         }
     }
@@ -58,9 +71,9 @@ struct Handlers {
     static String debug() {
         String resp;
         const Handlers& h = the();
-        for (const auto& p : h.debugHandlers) {
-            const auto& values = p.second();
-            resp += p.first + ":\n";
+        for (const auto& p : h.handlers) {
+            const auto& values = p->debug();
+            resp += p->Name + ":\n";
             for (const auto& v : values) {
                 resp += "  " + v.first + ": " + v.second + "\n";
             }
@@ -75,21 +88,31 @@ struct Handlers {
 
 private:
     struct THandlersSamePeriod {
-        std::vector<std::function<void(std::chrono::milliseconds)>> functions;
+        std::vector<Handler*> backends;
         std::chrono::milliseconds last_execution = -1024ms;
-        bool run(std::chrono::milliseconds now, std::chrono::milliseconds period) {
-            if (now > last_execution && now - last_execution < period)
+        bool run(std::chrono::milliseconds now) {
+            assert(backends.size() > 0);
+            if (now > last_execution && now - last_execution < backends[0]->Period)
                 return false;
             last_execution = now;
-            for (const auto& handle : functions)
-                handle(now);
+            for (const auto& b : backends) {
+//                 Serial.printf("+++ %s\n", b->Name.c_str());
+                b->handle(now);
+//                 Serial.printf("−−− %s\n", b->Name.c_str());
+            }
             return true;
         }
     };
 
     Handlers() = default;
-    std::map<std::chrono::milliseconds, THandlersSamePeriod> handlers;
-    std::vector<std::function<void()>> initters;
-    std::vector<std::pair<String, std::function<std::map<String,String>()>>> debugHandlers;
+    std::map<std::chrono::milliseconds, THandlersSamePeriod> handlersByDelay;
+    std::vector<Handler*> handlers;
     std::chrono::milliseconds delay_ = 250ms;
 };
+
+Handler::Handler(String name, std::chrono::milliseconds period)
+: Period(period)
+, Name(name)
+{
+    Handlers::add(*this);
+}

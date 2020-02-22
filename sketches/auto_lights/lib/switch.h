@@ -4,22 +4,16 @@
 #include "handlers.h"
 #include "light_sensor.h"
 
-struct TSwitch {
+struct TSwitch : public Handler {
     int pin;
 
     TSwitch(int pin, int httpId, const char* description)
-    : pin(pin)
+    : Handler("Switch_"_str + pin)
+    , pin(pin)
+    , HttpID(httpId)
+    , Description(description)
     {
         pinMode(pin, OUTPUT);
-        Handlers::addDebug("Switch_"_str + pin, [=]{
-            return std::map<String, String> {
-                {"Id", ToString(httpId)},
-                {"Name", description},
-                {"Pin", ToString(pin)},
-                {"State", OnOff(SwitchedOn)},
-                {"Type", "Switch"},
-            };
-        });
     }
 
     void TurnOn(bool desired) {
@@ -33,7 +27,21 @@ struct TSwitch {
         return SwitchedOn;
     }
 
+    void handle(std::chrono::milliseconds) override {}
+
+    std::map<String, String> debug() const override {
+        return std::map<String, String> {
+            {"Id", ToString(HttpID)},
+            {"Name", Description},
+            {"Pin", ToString(pin)},
+            {"State", OnOff(SwitchedOn)},
+            {"Type", "Switch"},
+        };
+    }
+
 private:
     bool SwitchedOn = false;
+    const int HttpID;
+    const char* Description;
 };
 

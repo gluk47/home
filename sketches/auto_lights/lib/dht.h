@@ -2,43 +2,47 @@
 #include "handlers.h"
 #include <DHT.h>
 
-struct TDht {
+struct TDht : public Handler {
     TDht(uint8_t pin = D4, uint8_t type = DHT22)
-    : sensor(pin, type) {
-        Handlers::addDebug("DHT", [this]{
-            const float t = sensor.readTemperature();
-            const float h = sensor.readHumidity();
-            return std::map<String, String>{
-                {"FeelsLike", String(sensor.computeHeatIndex(t, h))},
-                {"Humidity", String(h)},
-                {"Temperature", String(t)}
-            };
-        });
+    : Handler("DHT (raw)")
+    , sensor(pin, type)
+    { }
+
+    std::map<String, String> debug() const override {
+        const float t = const_cast<DHT&>(sensor).readTemperature();
+        const float h = const_cast<DHT&>(sensor).readHumidity();
+        return {
+            {"FeelsLike", String(const_cast<DHT&>(sensor).computeHeatIndex(t, h))},
+            {"Humidity", String(h)},
+            {"Temperature", String(t)}
+        };
     }
 
     DHT sensor;
 };
 
-struct TTemperatureController {
+struct TTemperatureController : public Handler {
     TDht& Dht;
     float DesiredTemp = 22;
     float Hysteresis = 2; //degrees
 
     TTemperatureController(TDht& dht, float desiredTemp = 22.f, float hysteresis = 2.f)
-    : Dht(dht), DesiredTemp(desiredTemp), Hysteresis(hysteresis)
+    : Handler("DHT Controller")
+    , Dht(dht), DesiredTemp(desiredTemp), Hysteresis(hysteresis)
     {
-        Handlers::add([this](std::chrono::milliseconds){
-            float margin = SwitchedOn ? +Hysteresis : -Hysteresis;
-            SwitchedOn = Dht.sensor.readTemperature() > DesiredTemp + margin;
-        });
+    }
 
-        Handlers::addDebug("LightSensor", [this]{ return
-            std::map<String, String>{
-                {"Temperature", ToString(Dht.sensor.readTemperature())},
-                {"DesiredTemp", ToString(DesiredTemp)},
-                {"Hysteresis", ToString(Hysteresis)}
-            };
-        });
+    void handle(std::chrono::milliseconds) override {
+        float margin = SwitchedOn ? +Hysteresis : -Hysteresis;
+        SwitchedOn = Dht.sensor.readTemperature() > DesiredTemp + margin;
+    }
+
+    std::map<String, String> debug() const override {
+        return {
+            {"Temperature", ToString(Dht.sensor.readTemperature())},
+            {"DesiredTemp", ToString(DesiredTemp)},
+            {"Hysteresis", ToString(Hysteresis)}
+        };
     }
 
     bool ShouldSwitchOn() const {

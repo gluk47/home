@@ -5,22 +5,21 @@
 #include <chrono>
 #include <map>
 
-struct TLightSensor {
+struct TLightSensor : public Handler {
     int pin = A0;
     int Darkness = 500; // 0 .. 1024
     int Hysteresis = 50; // distance to darkness to switch the reported state
     std::chrono::milliseconds StabilizationDelay = 250ms;
 
-    TLightSensor() {
+    TLightSensor()
+    : Handler("Light sensor")
+    {
         pinMode(pin, INPUT);
-        Handlers::add([this](std::chrono::milliseconds when){
-            Update(when);
-        });
-        Handlers::addDebug("LightSensor", [this]{ return GetState(); });
     }
 
+    void handle(std::chrono::milliseconds now) override;
+
     int Value() const noexcept { return Value_; }
-    void Update(std::chrono::milliseconds when);
     // with stabilizationDelay
     bool IsDark() const;
     bool IsDarkNow() const {
@@ -30,7 +29,7 @@ struct TLightSensor {
             return Value_ > Darkness - Hysteresis;
     }
 
-    std::map<String, String> GetState() const {
+    std::map<String, String> debug() const override {
         return {
             {"Darkness", String(Darkness)},
             {"DelayLeft", ToString(TimeToStabilize)},
@@ -49,7 +48,7 @@ private:
     std::chrono::milliseconds LastUpdate{0};
 };
 
-inline void TLightSensor::Update(std::chrono::milliseconds now) {
+inline void TLightSensor::handle(std::chrono::milliseconds now) {
     std::chrono::milliseconds timePassed = BoardTimeDifference(LastUpdate, now);
     TimeToStabilize = timePassed > TimeToStabilize ? 0ms : TimeToStabilize - timePassed;
     LastUpdate = now;

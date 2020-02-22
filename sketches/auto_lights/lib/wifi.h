@@ -2,14 +2,27 @@
 #include "handlers.h"
 #include <ESP8266WiFi.h>
 
-struct WifiClient {
+struct WifiClient : public Handler {
     WifiClient(const char* essid, const char* password)
-    : essid(essid)
+    : Handler("wifi")
+    , essid(essid)
     , password(password)
     {
         WiFi.mode(WIFI_STA);
-        Handlers::addInit([this] { reconnect(); });
-        Handlers::add([this](std::chrono::milliseconds){ reconnect(); });
+    }
+
+    void init() override {
+        reconnect();
+    }
+
+    void handle(std::chrono::milliseconds) override {
+        reconnect();
+    }
+
+    std::map<String, String> debug() const override {
+        return std::map<String, String> {
+            {"IP", ip_}
+        };
     }
 
     void reconnect() {

@@ -7,18 +7,6 @@
 #include <tuple>
 #include <utility>
 
-// A controller that decides whether a switch should be turned on or off
-class IController {
-public:
-    IController() {
-        Handlers::add([this](std::chrono::milliseconds now){
-            Update(now);
-        });
-    }
-
-    virtual void Update(std::chrono::milliseconds when) = 0;
-};
-
 namespace NController {
     // TODO move these helpers as lambdas with ops folding as soon as C++17 is fully supported
     struct TAllOn {
@@ -55,18 +43,18 @@ namespace NController {
 }
 
 template <typename TLightSensors, typename TSwitches>
-class TController : public IController {
+class TController : public Handler {
 public:
     std::chrono::milliseconds MinimalDelay;
 
-    TController(const TLightSensors& sensors, TSwitches& switches, std::chrono::milliseconds minimalDelay = 1000ms)
-    : MinimalDelay(minimalDelay)
+    TController(const String& name, const TLightSensors& sensors, TSwitches& switches, std::chrono::milliseconds minimalDelay = 1000ms)
+    : Handler(name, minimalDelay)
     , Sensors(sensors)
     , Switches(switches) {
     }
 
-    void Update(std::chrono::milliseconds now) override {
-        if (BoardTimeDifference(LastSwitch, now) < MinimalDelay)
+    void handle(std::chrono::milliseconds now) override {
+        if (BoardTimeDifference(LastSwitch, now) < Period)
             return;
 
         using namespace NController;
@@ -79,6 +67,12 @@ public:
         }
     }
 
+    std::map<String, String> debug() const override {
+        return {
+            {"LastSwitch", ToString(LastSwitch)}
+        };
+    }
+
 private:
     std::chrono::milliseconds LastSwitch{0};
     const TLightSensors& Sensors;
@@ -87,6 +81,6 @@ private:
 
 // TODO use deduction guides as soon as xtensa toolchain suports them
 template <typename TLightSensors, typename TSwitches>
-TController<TLightSensors, TSwitches> MakeController(TLightSensors&& sensors, TSwitches&& switches) {
-    return TController<TLightSensors, TSwitches>(std::forward<const TLightSensors&>(sensors), std::forward<TSwitches&>(switches));
+TController<TLightSensors, TSwitches> MakeController(const String& name, TLightSensors&& sensors, TSwitches&& switches) {
+    return TController<TLightSensors, TSwitches>(name, std::forward<const TLightSensors&>(sensors), std::forward<TSwitches&>(switches));
 }

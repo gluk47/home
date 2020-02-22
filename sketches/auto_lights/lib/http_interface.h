@@ -9,10 +9,11 @@
 #include <ESP8266WebServer.h>
 #include <vector>
 
-class THttpInterface {
+class THttpInterface : public Handler {
 public:
     THttpInterface(THttpSensor& httpSensor, uint16_t port = 80, TLightSensor* lightSensor = nullptr)
-    : httpSensor(httpSensor)
+    : Handler("HTTP server", 100ms)
+    , httpSensor(httpSensor)
     , lightSensor(lightSensor)
     , Server(port) {
 #define HANDLE(handle,method,f) \
@@ -27,9 +28,21 @@ public:
         HANDLE( debug,  GET,     get_debug);
         HANDLE(  help,  GET,      get_help);
 #undef HANDLE
+    }
 
-        Handlers::addInit([this]{ Server.begin(); });
-        Handlers::add([this](std::chrono::milliseconds){ Server.handleClient(); }, 100ms);
+    void init() override {
+        Server.begin();
+    }
+
+    void handle(std::chrono::milliseconds) override {
+        Server.handleClient();
+    }
+
+    std::map<String, String> debug() const override {
+        std::map<String, String> ret;
+        for (const auto& h : helps)
+            ret[h.path] = h.method;
+        return ret;
     }
 
     void SetLightSensor(TLightSensor* lightSensor) noexcept {

@@ -2,7 +2,7 @@
 
 #include "handlers.h"
 
-struct TPwm {
+struct TPwm : public Handler {
     int value = 0;
     int step = 1;
     int range = 1024;
@@ -23,33 +23,37 @@ struct TPwm {
          const char* description,
          std::chrono::milliseconds period = 5ms
     )
-    : pin(pin)
+    : Handler("PWM_"_str + pin, period)
+    , pin(pin)
     , enabled(std::move(enabled))
     , httpSwitch(httpSwitch)
     , light(light)
-    , StepDuration(period) {
+    , StepDuration(period)
+    , Description(description)
+    , HttpID(id)
+    {
         pinMode(pin, OUTPUT);
         digitalWrite(pin, LOW);
+    }
 
-        Handlers::add([this](std::chrono::milliseconds){
-            (++*this).write();
-        }, StepDuration);
+    void handle(std::chrono::milliseconds) override {
+        (++*this).write();
+    }
 
-        Handlers::addDebug("PWM_"_str + pin, [=]{
-            return std::map<String, String> {
-                {"Type", "PWM"},
-                {"Pin", ToString(pin)},
-                {"HttpId", ToString(id)},
-                {"Name", description},
-                {"Value", String(value)},
-                {"Step", String(step)},
-                {"Range", String(range)},
-                {"HttpEnabled", OnOff(this->httpSwitch)},
-                {"Light", this->light.IsDark() ? "dark" : "not dark"},
-                {"EnabledPeriod", YesNo(this->enabled[enabled_i])},
-                {"SwitchedOn", YesNo(this->isSwitchedOn())}
-            };
-        });
+    std::map<String, String> debug() const override {
+        return {
+            {"Type", "PWM"},
+            {"Pin", ToString(pin)},
+            {"HttpId", ToString(HttpID)},
+            {"Name", Description},
+            {"Value", String(value)},
+            {"Step", String(step)},
+            {"Range", String(range)},
+            {"HttpEnabled", OnOff(this->httpSwitch)},
+            {"Light", this->light.IsDark() ? "dark" : "not dark"},
+            {"EnabledPeriod", YesNo(this->enabled[enabled_i])},
+            {"SwitchedOn", YesNo(this->isSwitchedOn())}
+        };
     }
 
     TPwm& operator++() {
@@ -72,4 +76,8 @@ struct TPwm {
         else
             analogWrite(pin, 0);
     }
+
+private:
+    const char* Description;
+    int HttpID;
 };
