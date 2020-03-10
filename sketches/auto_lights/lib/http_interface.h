@@ -7,6 +7,7 @@
 #include "common.h"
 
 #include <ESP8266WebServer.h>
+#include <unordered_map>
 #include <vector>
 
 class THttpInterface : public Handler {
@@ -23,8 +24,6 @@ public:
     } while(false);
         HANDLE(      ,  GET,          root);
         HANDLE(toggle, POST,        toggle);
-        HANDLE(   set, POST,  set_darkness);
-        HANDLE(   get,  GET,     get_light);
         HANDLE( debug,  GET,     get_debug);
         HANDLE(  help,  GET,      get_help);
 #undef HANDLE
@@ -47,6 +46,32 @@ public:
 
     void SetLightSensor(TLightSensor* lightSensor) noexcept {
         lightSensor = lightSensor;
+    }
+
+    void on(const char* handle, HTTPMethod method, std::function<void(ESP8266WebServer& server)>&& func, const char* help) {
+        handlers[handle] = [this, method, handleFunc = std::move(func)]{
+            handleFunc(Server);
+            if (method == HTTP_POST) {
+                // note: it might happen after a response has been sent. No big deal.
+                Server.sendHeader("Location", "/");
+                Server.send(303, "text/plain", "OK\n");
+            }
+        };
+        Server.on(handle, method, handlers.at(handle));
+        const char* name = "UNKNOWN";
+        switch (method) {
+#define METHOD(x) case HTTP_##x: name = #x; break;
+            METHOD(ANY);
+            METHOD(GET);
+            METHOD(HEAD);
+            METHOD(POST);
+            METHOD(PUT);
+            METHOD(PATCH);
+            METHOD(DELETE);
+            METHOD(OPTIONS);
+#undef METHOD
+        }
+        helps.push_back({name, handle, help});
     }
 
 private:
@@ -101,28 +126,6 @@ private:
         Server.send(303, "text/plain", "OK\n");
     }
 
-    static constexpr const char* help_set_darkness = "arg: int threshold. Set, when it is dark (see also 'get').";
-    void set_darkness() {
-        if (no_light_sensor())
-            return;
-        int threshold = Server.arg("threshold").toInt();
-        Serial.println("set_darkness: "_str + threshold);
-        if (threshold <= 0 || threshold > 1024) {
-            Server.send(400, "text/plain", "out of range");
-            return;
-        }
-        lightSensor->Darkness = threshold;
-        Server.sendHeader("Location","/");
-        Server.send(303);
-    }
-
-    static constexpr const char* help_get_light = "get the current brightness level (see also 'set').";
-    void get_light() {
-        if (no_light_sensor())
-            return;
-        Server.send(200, "text/plain", ""_str + lightSensor->Value() + "\n");
-    }
-
     static constexpr const char* help_get_debug = "Get all available debug info";
     void get_debug() {
         Server.send(200, "text/plain", Handlers::debug());
@@ -130,7 +133,7 @@ private:
 
     static constexpr const char* help_get_help = "===> You are here <===";
     void get_help() {
-        String help;
+        String help = "To POST args: curl /handle -XPOST --data 'arg1=valu1;arg2=value2'\n\n";
         for (const auto& h : helps) {
             help += String(h.method) + " " + h.path + ": " + h.description + "\n\n";
         }
@@ -139,7 +142,7 @@ private:
 
     bool no_light_sensor() {
         if (!lightSensor)
-            Server.send(500, "text/plain", "there is no light sensor");
+            Server.send(500, "text/plain", "there is no light sensor\n");
         return not lightSensor;
     }
 
@@ -152,4 +155,5 @@ private:
         const char* description;
     };
     std::vector<THelpItem> helps;
+    std::unordered_map<const char*, std::function<void()>> handlers;
 };

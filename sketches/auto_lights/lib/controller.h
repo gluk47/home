@@ -13,8 +13,17 @@ namespace NController {
         bool operator()() const { return true; }
 
         template <typename TSensor, typename... TSensors>
-        bool operator()(TSensor&& s, TSensors&&... sensors) const {
+        bool operator()(const TSensor& s, const TSensors&... sensors) const {
             return s.ShouldSwitchOn() and operator()(sensors...);
+        }
+    };
+
+    struct TAllSwitchesOn {
+        bool operator()() const { return true; }
+
+        template <typename TSwitch, typename... TSwitches>
+        bool operator()(const TSwitch& s, const TSwitches&... sensors) const {
+            return s.TurnedOn() and operator()(sensors...);
         }
     };
 
@@ -24,7 +33,7 @@ namespace NController {
         bool operator()() const { return true; }
 
         template <typename TSwitch, typename... TSwitches>
-        bool operator()(TSwitch&& s, TSwitches&&... switches) const {
+        bool operator()(const TSwitch& s, const TSwitches&... switches) const {
             return s.TurnedOn() != Desired and operator()(switches...);
         }
     };
@@ -40,17 +49,52 @@ namespace NController {
             operator()(ss...);
         }
     };
+
+    struct GetNames {
+        String operator()() const {
+            return String();
+        }
+
+        template <typename THandler>
+        String operator()(const THandler& h) {
+            return "\"" + Get(h) + "\"";
+        }
+
+        template <typename THandler, typename... THandlers>
+        String operator()(const THandler& h, const THandlers&... hh) {
+            return "\"" + Get(h) + "\", " + operator()(hh...);
+        }
+
+    private:
+        const String Null = "<nullptr>";
+
+        template <typename THandler>
+        const String& Get(const THandler& h) {
+            return &h ? h.Name : Null;
+        }
+    };
 }
 
-template <typename TLightSensors, typename TSwitches>
+template <typename TSensors, typename TSwitches>
 class TController : public Handler {
 public:
     std::chrono::milliseconds MinimalDelay;
 
-    TController(const String& name, const TLightSensors& sensors, TSwitches& switches, std::chrono::milliseconds minimalDelay = 1000ms)
+    TController(const String& name, const TSensors&& sensors, TSwitches&& switches, std::chrono::milliseconds minimalDelay = 1000ms)
     : Handler(name, minimalDelay)
     , Sensors(sensors)
     , Switches(switches) {
+    }
+
+    void init() override {
+        using namespace NController;
+        Serial.printf("  controller %s:\n", Name.c_str());
+        const String& sensors = std::apply(GetNames(), Sensors);
+        const String& switches = std::apply(GetNames(), Switches);
+        Serial.printf("    sensors: %s\n    switches: %s\n---\n",
+            sensors.c_str(),
+            switches.c_str()
+        );
     }
 
     void handle(std::chrono::milliseconds now) override {
@@ -59,28 +103,36 @@ public:
 
         using namespace NController;
         const bool desired = std::apply(TAllOn(), Sensors);
-        const bool actual = std::apply(TIsChangeNeeded{desired}, Switches);
-
-        if (desired != actual) {
+        if (std::apply(TIsChangeNeeded{desired}, Switches)) {
             LastSwitch = now;
             std::apply(TTurnOn{desired}, Switches);
         }
     }
 
     std::map<String, String> debug() const override {
+        using namespace NController;
         return {
-            {"LastSwitch", ToString(LastSwitch)}
+            {"Last switch", ToString(BoardTimeDifference(LastSwitch, std::chrono::milliseconds(::millis()))) + " ago"_str},
+            {"Turned on", YesNo(std::apply(TAllSwitchesOn(), Switches))},
+            {"Desired state", OnOff(std::apply(TAllOn(), Sensors))},
+            {"Sensors", "[ " + std::apply(GetNames(), Sensors) + " ]"},
+            {"Switches", "[ " + std::apply(GetNames(), Switches) + " ]"},
         };
     }
 
 private:
     std::chrono::milliseconds LastSwitch{0};
-    const TLightSensors& Sensors;
-    TSwitches& Switches;
+    const TSensors Sensors;
+    TSwitches Switches;
 };
 
-// TODO use deduction guides as soon as xtensa toolchain suports them
-template <typename TLightSensors, typename TSwitches>
-TController<TLightSensors, TSwitches> MakeController(const String& name, TLightSensors&& sensors, TSwitches&& switches) {
-    return TController<TLightSensors, TSwitches>(name, std::forward<const TLightSensors&>(sensors), std::forward<TSwitches&>(switches));
+// TODO use deduction guides as soon as xtensa toolchain supports them
+template <typename TSensors, typename TSwitches>
+TController<TSensors, TSwitches> MakeController(
+    const String& name,
+    const TSensors& sensors,
+    TSwitches&& switches,
+    std::chrono::milliseconds minimalDelay = 1000ms
+) {
+    return TController<TSensors, TSwitches>(name, std::move(sensors), std::forward<TSwitches&&>(switches), minimalDelay);
 }

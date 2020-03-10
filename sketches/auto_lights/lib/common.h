@@ -16,6 +16,10 @@ String ToString(T&& v) {
     return ret;
 }
 
+inline String ToString(std::chrono::milliseconds ms) {
+    return String(static_cast<long>(ms.count())) + " ms";
+}
+
 inline const char* YesNo(bool condition) {
     return condition ? "yes" : "no";
 }
@@ -30,10 +34,6 @@ inline std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds b
         return std::chrono::milliseconds(std::numeric_limits<int>::max() - before.count() + now.count());
     else
         return now - before;
-}
-
-inline String ToString(const std::chrono::milliseconds& ms) {
-    return String(static_cast<long>(ms.count())) + " ms";
 }
 
 #if __cplusplus < 201402L

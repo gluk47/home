@@ -15,8 +15,10 @@ struct WifiClient : public Handler {
         reconnect();
     }
 
-    void handle(std::chrono::milliseconds) override {
+    void handle(std::chrono::milliseconds when) override {
         reconnect();
+        print_ip(when);
+
     }
 
     std::map<String, String> debug() const override {
@@ -38,8 +40,8 @@ struct WifiClient : public Handler {
         }
 
         if (WiFi.status() == WL_CONNECTED) {
-            Serial.printf("\r\nConnection established!\r\nIP address:\t");
-            Serial.println(ip_ = WiFi.localIP().toString());
+            Serial.printf("\r\nConnection established!\r\n");
+            ip_ = WiFi.localIP().toString();
         } else {
             Serial.println("\r\nConnection failed");
         }
@@ -50,7 +52,15 @@ struct WifiClient : public Handler {
     }
 
 private:
+    void print_ip(std::chrono::milliseconds now, std::chrono::milliseconds period = 5000ms) const {
+        if (BoardTimeDifference(lastPrint, now) < period)
+            return;
+        Serial.printf("IP: %s\n", ip().c_str());
+        lastPrint = now;
+    }
+
     const char* essid;
     const char* password;
     String ip_;
+    mutable std::chrono::milliseconds lastPrint{0};
 };

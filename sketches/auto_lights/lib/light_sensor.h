@@ -71,10 +71,11 @@ inline bool TLightSensor::IsDark() const {
     return IsDark_;
 }
 
-struct TNightLightController {
+struct TNightLightSensor {
     bool ShouldSwitchOn() const {
         return sensor.IsDark();
     };
 
     const TLightSensor& sensor;
+    const String Name;
 };

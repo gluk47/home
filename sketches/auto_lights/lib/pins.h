@@ -7,6 +7,6 @@ namespace Pins {
         No = -1,
         Indoor[] = { D5, D2 },
         Outdoor = D1,
-        DHT = D4,
+        DHT = D2,
         Heater = D1;
 };

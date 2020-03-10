@@ -8,7 +8,7 @@ struct TSwitch : public Handler {
     int pin;
 
     TSwitch(int pin, int httpId, const char* description)
-    : Handler("Switch_"_str + pin)
+    : Handler("Switch "_str + description)
     , pin(pin)
     , HttpID(httpId)
     , Description(description)
@@ -39,9 +39,10 @@ struct TSwitch : public Handler {
         };
     }
 
-private:
-    bool SwitchedOn = false;
     const int HttpID;
     const char* Description;
+
+private:
+    bool SwitchedOn = false;
 };
 

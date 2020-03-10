@@ -36,13 +36,13 @@
 TDefaultSetup dc;
 
 TLightSensor LightSensor;
-TNightLightController LightControl{LightSensor};
+TNightLightSensor LightControl{LightSensor, "Night light sensor"};
 TSwitch DoorLight(Pins::Outdoor, THttpSensor::EOutdoor, "Внешний свет");
 
 auto FrontLights = MakeController(
     "Front lights",
-    std::make_tuple(LightControl, THttpController{dc.HttpSensor[THttpSensor::EOutdoor]}),
-    std::make_tuple(DoorLight)
+    std::tie(LightControl, THttpController{dc.HttpSensor[THttpSensor::EOutdoor], "Http Outdoor"}),
+    std::tie(DoorLight)
 );
 
 #define PWM_INDOOR
@@ -68,6 +68,21 @@ namespace {
     struct TSetup {
         TSetup () {
             dc.Http.SetLightSensor(&LightSensor);
+
+            dc.Http.on("/get", HTTP_GET, [&](ESP8266WebServer& server) {
+                Server.send(200, "text/plain", ToString(LightSensor.Value()) + "\n");
+            }, "Get current brightness level (see also 'set').");
+
+            dc.Http.on("/set", HTTP_POST, [&](ESP8266WebServer& server) {
+                int threshold = Server.arg("threshold").toInt();
+                const char* argname = "threshold";
+                if (!Server.hasArg(argname) || threshold <= 0 || threshold > 1024) {
+                    Server.send(400, "text/plain", "out of range");
+                    return;
+                }
+                Serial.println("set_darkness: "_str + threshold);
+                LightSensor.Darkness = threshold;
+            }, "arg: int threshold. Set, when it is dark (see also 'get').");
         }
     };
 }

@@ -44,10 +44,6 @@ struct Handlers {
         all.handlersByDelay[h.Period].backends.push_back(&h);
         all.handlers.push_back(&h);
         all.delay_ = all.handlersByDelay.begin()->first;
-        Serial.printf(
-            "+ handler '%s' with period %lld, new overall period is %lld\n",
-            h.Name.c_str(), h.Period.count(), all.delay_.count()
-        );
     }
 
     static void init() {
@@ -74,6 +70,7 @@ struct Handlers {
         for (const auto& p : h.handlers) {
             const auto& values = p->debug();
             resp += p->Name + ":\n";
+            resp += "  Period: " + ToString(p->Period) + "\n";
             for (const auto& v : values) {
                 resp += "  " + v.first + ": " + v.second + "\n";
             }
@@ -96,9 +93,7 @@ private:
                 return false;
             last_execution = now;
             for (const auto& b : backends) {
-//                 Serial.printf("+++ %s\n", b->Name.c_str());
                 b->handle(now);
-//                 Serial.printf("−−− %s\n", b->Name.c_str());
             }
             return true;
         }
