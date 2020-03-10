@@ -34,12 +34,10 @@ namespace {
 
         void init() override {
             dc.Http.on("/get", HTTP_GET, [&](ESP8266WebServer& server) {
-                Serial.println("Hello from [get]");
                 server.send(200, "text/plain", ""_str + dht.getTemperature() + "°C\n");
             }, "Get temperature");
 
             dc.Http.on("/set", HTTP_POST, [&](ESP8266WebServer& server) {
-                Serial.println("Hello from [set]");
                 const char* argname = "threshold";
                 float threshold = server.arg(argname).toFloat();
                 if (!server.hasArg(argname) || threshold < -10 || threshold > 30) {
