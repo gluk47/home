@@ -9,19 +9,28 @@ TDefaultSetup dc;
 TSwitch heater {Pins::Heater, THttpSensor::EHeater, "Heater"};
 THttpController httpHeaterSwitch {dc.HttpSensor[heater.HttpID], "Http for heater"};
 TDht dht(Pins::DHT, DHT11);
-TTemperatureThresholdSensor sensor(dht, 34.f, .5f);
+TTemperatureThresholdSensor sensor(dht, 34.f, 2.f);
 
 
 auto controller = MakeController(
     "Temperature trigger",
     std::tie(sensor, httpHeaterSwitch),
     std::tie(heater),
-    100ms
+    5min
 );
 
 
 struct TData {
     float DesiredTemp = 24;
+    float Hysteresis = 2;
+
+    void apply_defaults() {
+        TData defaults;
+        if (isnan(DesiredTemp))
+            DesiredTemp = defaults.DesiredTemp;
+        if (isnan(Hysteresis))
+            Hysteresis = defaults.Hysteresis;
+    }
 };
 
 TFlash <TData> flash;
@@ -41,14 +50,24 @@ namespace {
                 const char* argname = "threshold";
                 float threshold = server.arg(argname).toFloat();
                 if (!server.hasArg(argname) || threshold < -10 || threshold > 30) {
-                    server.send(400, "text/plain", "'threshold' out of range [-10, +30] or missing\n");
-                    return;
+                    server.send(400, "text/plain", "'threshold' out of range [-10, +30], ignored\n");
+                    Serial.println("Set temperature threshold to: "_str + threshold);
+                    sensor.DesiredTemp = flash.data.DesiredTemp = threshold;
                 }
-                Serial.println("Set temperature threshold to: "_str + threshold);
-                sensor.DesiredTemp = flash.data.DesiredTemp = threshold;
-            }, "arg: float threshold. Set, when it is dark (see also 'get').");
 
+                argname = "hysteresis";
+                float hysteresis = server.arg(argname).toFloat();
+                if (!server.hasArg(argname) || hysteresis < .25 || hysteresis > 10) {
+                    server.send(400, "text/plain", "'hysteresis' out of range [.25, 10], ignored\n");
+                    Serial.println("Set temperature hysteresis to: "_str + hysteresis);
+                    sensor.Hysteresis = flash.data.Hysteresis = hysteresis;
+                }
+
+            }, "threshold=24;hysteresis=2 : set target temperature and on-off interval.");
+
+            flash.data.apply_defaults();
             sensor.DesiredTemp = flash.data.DesiredTemp;
+            sensor.Hysteresis = flash.data.Hysteresis;
         };
 
         void handle(std::chrono::milliseconds) override {}

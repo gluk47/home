@@ -70,6 +70,11 @@ inline std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds b
             {
                 return std::chrono::milliseconds(ms);
             }
+
+            constexpr std::chrono::minutes operator "" min(unsigned long long ms)
+            {
+                return std::chrono::minutes(ms);
+            }
             #pragma GCC diagnostic pop
         }
 
