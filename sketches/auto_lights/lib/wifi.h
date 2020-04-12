@@ -4,7 +4,7 @@
 
 struct WifiClient : public Handler {
     WifiClient(const char* essid, const char* password)
-    : Handler("wifi")
+    : Handler("wifi", 60s)
     , essid(essid)
     , password(password)
     {
@@ -53,7 +53,7 @@ struct WifiClient : public Handler {
 
 private:
     void print_ip(std::chrono::milliseconds now, std::chrono::milliseconds period = 5000ms) const {
-        if (BoardTimeDifference(lastPrint, now) < period)
+        if (BoardTimeDifference(lastPrint, now) < period || ip().isEmpty())
             return;
         Serial.printf("IP: %s\n", ip().c_str());
         lastPrint = now;

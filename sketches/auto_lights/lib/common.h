@@ -66,14 +66,19 @@ inline std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds b
         namespace chrono_literals {
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wliteral-suffix"  // might not work with old GCC as well :(
-            constexpr std::chrono::milliseconds operator "" ms(unsigned long long ms)
+            constexpr std::chrono::milliseconds operator "" ms(unsigned long long value)
             {
-                return std::chrono::milliseconds(ms);
+                return std::chrono::milliseconds(value);
             }
 
-            constexpr std::chrono::minutes operator "" min(unsigned long long ms)
+            constexpr std::chrono::milliseconds operator "" s(unsigned long long value)
             {
-                return std::chrono::minutes(ms);
+                return std::chrono::seconds(value);
+            }
+
+            constexpr std::chrono::minutes operator "" min(unsigned long long value)
+            {
+                return std::chrono::minutes(value);
             }
             #pragma GCC diagnostic pop
         }

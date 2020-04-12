@@ -8,8 +8,8 @@
 TDefaultSetup dc;
 TSwitch heater {Pins::Heater, THttpSensor::EHeater, "Heater"};
 THttpController httpHeaterSwitch {dc.HttpSensor[heater.HttpID], "Http for heater"};
-TDht dht(Pins::DHT, DHT11);
-TTemperatureThresholdSensor sensor(dht, 34.f, 2.f);
+TDht dht(Pins::DHT, DHT11, .9f);
+TTemperatureThresholdSensor sensor(dht, 34.f, 1.5f);
 
 
 auto controller = MakeController(
@@ -38,7 +38,7 @@ TFlash <TData> flash;
 namespace {
     struct TSetup : Handler {
         TSetup()
-        : Handler("setup", 60000ms)
+        : Handler("setup", 360min)
         {}
 
         void init() override {
@@ -63,7 +63,7 @@ namespace {
                     sensor.Hysteresis = flash.data.Hysteresis = hysteresis;
                 }
 
-            }, "threshold=24;hysteresis=2 : set target temperature and on-off interval.");
+            }, "threshold=24;hysteresis=2 : set target temperature and on-off margin\n  on = threshold − hysteresis, off = threshold + hysteresis.");
 
             flash.data.apply_defaults();
             sensor.DesiredTemp = flash.data.DesiredTemp;

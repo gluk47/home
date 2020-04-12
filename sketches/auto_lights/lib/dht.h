@@ -3,8 +3,10 @@
 #include <DHT.h>
 
 struct TDht : public Handler {
-    TDht(uint8_t pin = D4, uint8_t type = DHT22)
-    : Handler("DHT (raw)", 5000ms)
+    TDht(uint8_t pin = D4, uint8_t type = DHT22, float inertion = 0.f)
+    : Handler("DHT (raw)", 5s)
+    , Type(type)
+    , Inertion(inertion)
     , sensor(pin, type)
     { }
 
@@ -31,11 +33,18 @@ struct TDht : public Handler {
     }
 
     float getTemperature() {
-        float newTemp = sensor.readTemperature();
-        if (!isnan(newTemp))
-            temperature = newTemp;
+        const float newTemp = sensor.readTemperature();
+        if (!isnan(newTemp)) {
+            const float mean = isnan(temperature) ? newTemp : (Inertion * temperature + (1 - Inertion) * newTemp);
+            if (mean != newTemp)
+                Serial.printf("%.1f°C → %.1f°C\n", newTemp, mean);
+            temperature = mean;
+        }
         return temperature;
     }
+
+    const uint8_t Type;
+    const float Inertion;
 
 private:
     mutable float temperature = NAN, humidity = NAN;
@@ -44,8 +53,8 @@ private:
 
 struct TTemperatureThresholdSensor : public Handler {
     const TDht& Dht;
-    float DesiredTemp = 22;
-    float Hysteresis = 2; //degrees
+    float DesiredTemp = 22;  //°C
+    float Hysteresis = 2; //°C
 
     TTemperatureThresholdSensor(TDht& dht, float desiredTemp = 22.f, float hysteresis = 2.f)
     : Handler("DHT threshold sensor")
