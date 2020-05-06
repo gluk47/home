@@ -33,15 +33,17 @@
  * Lights can be turned off independently.
  */
 
+const char* NConfig::hostname = "lights";
 TDefaultSetup dc;
 
 TLightSensor LightSensor;
 TNightLightSensor LightControl{LightSensor, "Night light sensor"};
 TSwitch DoorLight(Pins::Outdoor, THttpSensor::EOutdoor, "Внешний свет");
+THttpController httpLightSwitch {dc.HttpSensor[THttpSensor::EOutdoor], "Http Outdoor light"};
 
 auto FrontLights = MakeController(
     "Front lights",
-    std::tie(LightControl, THttpController{dc.HttpSensor[THttpSensor::EOutdoor], "Http Outdoor"}),
+    std::tie(LightControl, httpLightSwitch),
     std::tie(DoorLight)
 );
 
@@ -51,7 +53,7 @@ const TSwitch Switches[] = {
     {Pins::Indoor[0], dc.HttpSensor[THttpSensor::EIndoor], "Indoor"},
     {Pins::Indoor[1], dc.HttpSensor[THttpSensor::EIndoor], "Indoor"},
     #endif
-    {Pins::Outdoor, dc.HttpSensor[THttpSensor::EOutdoor], "Внешний свет"},
+    DoorLight,
 };
 
 TPwm Pwms[] = {
@@ -70,14 +72,14 @@ namespace {
             dc.Http.SetLightSensor(&LightSensor);
 
             dc.Http.on("/get", HTTP_GET, [&](ESP8266WebServer& server) {
-                Server.send(200, "text/plain", ToString(LightSensor.Value()) + "\n");
+                server.send(200, "text/plain", ToString(LightSensor.Value()) + "\n");
             }, "Get current brightness level (see also 'set').");
 
             dc.Http.on("/set", HTTP_POST, [&](ESP8266WebServer& server) {
-                int threshold = Server.arg("threshold").toInt();
+                int threshold = server.arg("threshold").toInt();
                 const char* argname = "threshold";
-                if (!Server.hasArg(argname) || threshold <= 0 || threshold > 1024) {
-                    Server.send(400, "text/plain", "out of range");
+                if (!server.hasArg(argname) || threshold < 0 || threshold > 1200) {
+                    server.send(400, "text/plain", "out of range [0, 1200]\n");
                     return;
                 }
                 Serial.println("set_darkness: "_str + threshold);

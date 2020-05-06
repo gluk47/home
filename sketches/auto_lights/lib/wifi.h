@@ -23,7 +23,7 @@ struct WifiClient : public Handler {
 
     std::map<String, String> debug() const override {
         return std::map<String, String> {
-            {"IP", ip_}
+            {"IP", ip()}
         };
     }
 
@@ -40,10 +40,10 @@ struct WifiClient : public Handler {
         }
 
         if (WiFi.status() == WL_CONNECTED) {
-            Serial.printf("\r\nConnection established!\r\n");
             ip_ = WiFi.localIP().toString();
+            Serial.printf("\nConnection established!\nIP: %s\n", ip().c_str());
         } else {
-            Serial.println("\r\nConnection failed");
+            Serial.println("\nConnection failed");
         }
     }
 

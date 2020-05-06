@@ -1,14 +1,15 @@
 #pragma once
 #include "handlers.h"
-#include <DHT.h>
+#include <DHTesp.h>
+#include <unordered_map>
 
 struct TDht : public Handler {
-    TDht(uint8_t pin = D4, uint8_t type = DHT22, float inertion = 0.f)
+    TDht(uint8_t pin, DHTesp::DHT_MODEL_t type, float inertion = 0.f)
     : Handler("DHT (raw)", 5s)
-    , Type(type)
     , Inertion(inertion)
-    , sensor(pin, type)
-    { }
+    {
+        sensor.setup(pin, type);
+    }
 
     void init() override {
         getTemperature();
@@ -20,11 +21,22 @@ struct TDht : public Handler {
 
     std::map<String, String> debug() const override {
         const float t = getTemperature();
-        const float h = const_cast<DHT&>(sensor).readHumidity();
+        DHTesp& s = const_cast<DHTesp&>(sensor);
+        const float h = s.getHumidity();
+        static const std::unordered_map<unsigned, String> model = {
+#define S(x) {DHTesp::x, #x}
+            S(AUTO_DETECT),
+            S(DHT11),
+            S(DHT22),
+            S(AM2302),  // Packaged DHT22
+            S(RHT03)    // Equivalent to DHT22
+#undef S
+        };
         return {
-            {"FeelsLike", String(const_cast<DHT&>(sensor).computeHeatIndex(t, h))},
             {"Humidity", String(h)},
-            {"Temperature", String(t)}
+            {"Temperature", String(t)},
+            {"Sensor", model.at(s.getModel())},
+            {"Status", s.getStatusString()}
         };
     }
 
@@ -33,7 +45,7 @@ struct TDht : public Handler {
     }
 
     float getTemperature() {
-        const float newTemp = sensor.readTemperature();
+        const float newTemp = sensor.getTemperature();
         if (!isnan(newTemp)) {
             const float mean = isnan(temperature) ? newTemp : (Inertion * temperature + (1 - Inertion) * newTemp);
             if (mean != newTemp)
@@ -43,12 +55,11 @@ struct TDht : public Handler {
         return temperature;
     }
 
-    const uint8_t Type;
     const float Inertion;
 
 private:
     mutable float temperature = NAN, humidity = NAN;
-    DHT sensor;
+    DHTesp sensor;
 };
 
 struct TTemperatureThresholdSensor : public Handler {

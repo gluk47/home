@@ -128,16 +128,16 @@ private:
 
     static constexpr const char* help_get_debug = "Get all available debug info";
     void get_debug() {
-        Server.send(200, "text/plain", Handlers::debug());
+        Server.send(200, "text/plain; charset=utf-8", Handlers::debug());
     }
 
     static constexpr const char* help_get_help = "===> You are here <===";
     void get_help() {
-        String help = "To POST args: curl /handle -XPOST --data 'arg1=valu1;arg2=value2'\n\n";
+        String help = "To POST args: curl /handle -XPOST --data 'arg1=value1;arg2=value2'\n\n";
         for (const auto& h : helps) {
             help += String(h.method) + " " + h.path + ": " + h.description + "\n\n";
         }
-        Server.send(200, "text/plain", help);
+        Server.send(200, "text/plain; charset=utf-8", help);
     }
 
     bool no_light_sensor() {

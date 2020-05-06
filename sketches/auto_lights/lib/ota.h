@@ -61,7 +61,9 @@ public:
     }
 
     std::map<String, String> debug() const override {
-        return {};
+        return {
+            {"hostname", hostname},
+        };
     }
 
     private:

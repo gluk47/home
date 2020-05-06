@@ -26,7 +26,7 @@ struct TLightSensor : public Handler {
         if (IsDark_)
             return Value_ < Darkness + Hysteresis;
         else
-            return Value_ > Darkness - Hysteresis;
+            return Value_ < Darkness - Hysteresis;
     }
 
     std::map<String, String> debug() const override {
