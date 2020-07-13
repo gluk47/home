@@ -1,9 +1,10 @@
+#include "lib/controller.h"
 #include "lib/dht.h"
+#include "lib/flash.h"
 #include "lib/main.h"
+#include "lib/ntp.h"
 #include "lib/pins.h"
 #include "lib/switch.h"
-#include "lib/controller.h"
-#include "lib/flash.h"
 
 const char* NConfig::hostname = "heater";
 TDefaultSetup dc;
@@ -11,6 +12,7 @@ TSwitch heater {Pins::Heater, THttpSensor::EHeater, "Heater"};
 THttpController httpHeaterSwitch {dc.HttpSensor[heater.HttpID], "Http for heater"};
 TDht dht(Pins::DHT, DHTesp::DHT11, .9f);
 TTemperatureThresholdSensor sensor(dht, 34.f, 1.5f);
+NTP ntp(3 * 3600, NConfig::ntp_server);
 
 
 auto controller = MakeController(
