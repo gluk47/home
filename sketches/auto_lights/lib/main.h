@@ -16,11 +16,13 @@ struct TDefaultSetup {
     THttpInterface Http{HttpSensor, 80};
     WifiClient wifi{NConfig::essid, NConfig::wifi_password};
     Ota ota{NConfig::hostname, NConfig::ota_pass_md5};
+    TDebugHandler debug;
 };
 
 void setup() {
     Serial.begin(115200);
-    delay(50);
+    while (!Serial)
+        delay(1);
     Serial.println('\n');
     Serial.printf(
         "Set delay to %d ms\r\n",

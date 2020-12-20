@@ -7,7 +7,6 @@
 #include <chrono>
 #include <functional>
 #include <map>
-#include <string>
 #include <vector>
 
 #include <cassert>
@@ -20,20 +19,54 @@ public:
     virtual std::map<String, String> debug() const = 0;
     virtual void handle(std::chrono::milliseconds now) = 0;
 
-    void pinMode(int pin, int mode, bool allow_override = false) {
-        if (PinModes().count(pin) and not allow_override)
+    void pinMode(uint8_t pin, uint8_t mode) {
             Serial.println("WARNING! Duplicate usage of the pin "_str + pin);
 
-        PinModes()[pin] = mode;
+        PinUsages()[pin].emplace_back(Name);
         ::pinMode(pin, mode);
+    }
+
+    static std::vector<String> ReportPinConflicts() {
+        std::vector<String> report;
+        for (const auto& p : PinUsages()) {
+            if (p.second.size() > 1)
+                report.emplace_back(
+                    "\033[33;40;1mWARNING!\033[0m Pin "_str + p.first
+                    + " is used more that once, by: " + p.second
+                );
+        }
+        return report;
     }
 
     const std::chrono::milliseconds Period;
     const String Name;
-    static std::map<int, int>& PinModes() {
-        static std::map<int, int> modes;
-        return modes;
+
+protected:
+    static std::map<int, std::vector<String>>& PinUsages() {
+        static std::map<int, std::vector<String>> users;
+        return users;
     }
+};
+
+class TDebugHandler : public Handler {
+public:
+    TDebugHandler() : Handler("debug", 1min) {}
+    std::map<String, String> debug() const override {
+        String conflicts;
+        // TODO format more nicely, do not hardcode it here
+        for (const auto& c : PinUsages()) {
+            conflicts += "    "_str + c.first + ": [\"" + ToString(c.second, R"(", ")") + "\"]\n";
+        }
+        return {
+            {"Pins", "\n" + conflicts}
+        };
+    };
+    void handle (std::chrono::milliseconds) override {
+        Serial.println(ToString(ReportPinConflicts(), "\n"));
+    }
+    void init() override {
+        handle(0ms);
+    };
 };
 
 struct Handlers {

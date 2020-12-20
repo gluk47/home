@@ -4,6 +4,7 @@
 #include <WString.h>
 
 #include <chrono>
+#include <vector>
 
 inline String operator"" _str(const char* s, size_t) {
     return String(s);
@@ -19,6 +20,25 @@ String ToString(T&& v) {
 inline String ToString(std::chrono::milliseconds ms) {
     return String(static_cast<long>(ms.count())) + " ms";
 }
+
+template <typename T>
+inline String ToString(const std::vector<T>& data, String sep = ", ") {
+    String ret;
+    for (const auto& d : data) {
+        ret += d;
+        ret += sep;
+    }
+    if (ret)
+        ret.remove(ret.length() - sep.length());
+    return ret;
+}
+
+template <typename T>
+StringSumHelper& operator+ (StringSumHelper &lhs, const std::vector<T>& data) {
+    lhs.concat(ToString(data));
+    return lhs;
+}
+
 
 inline const char* YesNo(bool condition) {
     return condition ? "yes" : "no";

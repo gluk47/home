@@ -10,6 +10,7 @@ struct TDht : public Handler {
     : Handler("DHT (raw)", 5s)
     , Inertion(inertion)
     {
+        pinMode(pin, INPUT);
         sensor.setup(pin, type);
     }
 
