@@ -56,7 +56,7 @@ inline std::chrono::milliseconds BoardTimeDifference(std::chrono::milliseconds b
         return now - before;
 }
 
-#if __cplusplus < 201402L
+#if __cplusplus < 201402L || defined(IN_KDEVELOP_PARSER)
 // before C++14
     namespace cxx_14 {
         template <size_t... i>
