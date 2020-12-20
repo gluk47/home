@@ -1,3 +1,4 @@
+#pragma once
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include "handlers.h"

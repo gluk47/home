@@ -1,5 +1,7 @@
 #pragma once
 #include "handlers.h"
+#include "ntp.h"
+
 #include <DHTesp.h>
 #include <unordered_map>
 
@@ -67,23 +69,33 @@ struct TTemperatureThresholdSensor : public Handler {
     float DesiredTemp = 22;  //°C
     float Hysteresis = 2; //°C
 
-    TTemperatureThresholdSensor(TDht& dht, float desiredTemp = 22.f, float hysteresis = 2.f)
+    TTemperatureThresholdSensor(TDht& dht, float desiredTemp = 22.f, float hysteresis = 2.f, const NTP* ntp = nullptr)
     : Handler("DHT threshold sensor")
     , Dht(dht), DesiredTemp(desiredTemp), Hysteresis(hysteresis)
+    , Ntp(ntp)
     {
     }
 
     void handle(std::chrono::milliseconds) override {
         float margin = SwitchedOn ? +Hysteresis : -Hysteresis;
-        SwitchedOn = Dht.getTemperature() < DesiredTemp + margin;
+        SwitchedOn = Dht.getTemperature() < DesiredTemp + margin + DayShift();
+    }
+
+    float DayShift() const {
+        if (!Ntp)
+            return 0;
+        int h = Ntp->getHours();
+        return (9 <= h and h <= 21) ? -2.f : 0.f;
     }
 
     std::map<String, String> debug() const override {
+        const float shift = DayShift();
         return {
             {"Temperature", ToString(Dht.getTemperature())},
-            {"DesiredTemp", ToString(DesiredTemp)},
+            {"DesiredTemp", ToString(DesiredTemp + shift)},
             {"Hysteresis", ToString(Hysteresis)},
-            {"SwitchedOn", YesNo(SwitchedOn)}
+            {"SwitchedOn", YesNo(SwitchedOn)},
+            {"DayShift", ToString(shift)}
         };
     }
 
@@ -93,4 +105,5 @@ struct TTemperatureThresholdSensor : public Handler {
 
 private:
     bool SwitchedOn = false;
+    const NTP* Ntp;
 };
