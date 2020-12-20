@@ -11,8 +11,8 @@ TDefaultSetup dc;
 TSwitch heater {Pins::Heater, THttpSensor::EHeater, "Heater"};
 THttpController httpHeaterSwitch {dc.HttpSensor[heater.HttpID], "Http for heater"};
 TDht dht(Pins::DHT, DHTesp::DHT11, .9f);
-TTemperatureThresholdSensor sensor(dht, 34.f, 1.5f);
 NTP ntp(3 * 3600, NConfig::ntp_server);
+TTemperatureThresholdSensor sensor(dht, 34.f, 1.5f, &ntp);
 
 
 auto controller = MakeController(
