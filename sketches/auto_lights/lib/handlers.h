@@ -7,6 +7,7 @@
 #include <chrono>
 #include <functional>
 #include <map>
+#include <string>
 #include <vector>
 
 #include <cassert>
@@ -19,8 +20,20 @@ public:
     virtual std::map<String, String> debug() const = 0;
     virtual void handle(std::chrono::milliseconds now) = 0;
 
+    void pinMode(int pin, int mode, bool allow_override = false) {
+        if (PinModes().count(pin) and not allow_override)
+            Serial.println("WARNING! Duplicate usage of the pin "_str + pin);
+
+        PinModes()[pin] = mode;
+        ::pinMode(pin, mode);
+    }
+
     const std::chrono::milliseconds Period;
     const String Name;
+    static std::map<int, int>& PinModes() {
+        static std::map<int, int> modes;
+        return modes;
+    }
 };
 
 struct Handlers {
