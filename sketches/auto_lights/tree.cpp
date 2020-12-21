@@ -22,7 +22,6 @@ struct TTreeRenderer {
     TTreeRenderer(NeoPixelBus<NeoGrbFeature, NeoEsp8266DmaWs2812xMethod>& strip)
     : Strip(strip) {
         randomSeed((analogRead(0) << 1) ^ (analogRead(0) << 3) ^ (analogRead(0) << 5) ^ (analogRead(0) << 7));
-        strip.GetPixelColor(0);
     }
 
     void operator()() {
@@ -31,6 +30,8 @@ struct TTreeRenderer {
             MaxBright = 128;
         } else if (h < 6) {
             MaxBright = 64;
+        } else {
+            MaxBright = 256;
         }
 
         for (int i = 0; i < 2; i++)
