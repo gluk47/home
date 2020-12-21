@@ -8,6 +8,7 @@
 
 const char* NConfig::hostname = "tree";
 TDefaultSetup dc;
+NTP ntp(3 * 3600, NConfig::ntp_server);
 
 using namespace std;
 
@@ -25,6 +26,13 @@ struct TTreeRenderer {
     }
 
     void operator()() {
+        auto h = ntp.getHours();
+        if (22 <= h or (6 <= h and h < 9)) {
+            MaxBright = 128;
+        } else if (h < 6) {
+            MaxBright = 64;
+        }
+
         for (int i = 0; i < 2; i++)
             gen_led(random(NLeds));
 
@@ -91,4 +99,4 @@ struct TTreeRenderer {
     }
 };
 
-TAddressableLedStrip<TTreeRenderer> strip(NLeds, 10ms);
+TAddressableLedStrip<TTreeRenderer> strip(NLeds, 20ms);
