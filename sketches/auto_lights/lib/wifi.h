@@ -1,6 +1,10 @@
 #pragma once
 #include "handlers.h"
-#include <ESP8266WiFi.h>
+#ifdef ARDUINO_ARCH_ESP8266
+#   include <ESP8266WiFi.h>
+#else
+#   include <WiFi.h>
+#endif
 
 struct WifiClient : public Handler {
     WifiClient(const char* essid, const char* password)

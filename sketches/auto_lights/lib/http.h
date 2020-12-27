@@ -1,5 +1,4 @@
 #pragma once
-#include "pins.h"
 #include <array>
 
 struct THttpSensor {

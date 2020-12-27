@@ -6,17 +6,20 @@
 
 #include "common.h"
 
-#include <ESP8266WebServer.h>
+#include <RichHttpServer.h>
 #include <unordered_map>
 #include <vector>
 
+template <typename TmplServer = RichHttpServer<RichHttp::Generics::Configs::EspressifBuiltin>>
 class THttpInterface : public Handler {
 public:
+    using TServer = TmplServer;
+
     THttpInterface(THttpSensor& httpSensor, uint16_t port = 80, TLightSensor* lightSensor = nullptr)
-    : Handler("HTTP server", 100ms)
+    : Handler("HTTP server", 50ms)
     , httpSensor(httpSensor)
     , lightSensor(lightSensor)
-    , Server(port) {
+    , Server(port, AuthProvider) {
 #define HANDLE(handle,method,f) \
     do {\
         Server.on("/" #handle, HTTP_##method, [this]{f();});\
@@ -48,7 +51,7 @@ public:
         lightSensor = lightSensor;
     }
 
-    void on(const char* handle, HTTPMethod method, std::function<void(ESP8266WebServer& server)>&& func, const char* help) {
+    void on(const char* handle, HTTPMethod method, std::function<void(TServer& server)>&& func, const char* help) {
         handlers[handle] = [this, method, handleFunc = std::move(func)]{
             handleFunc(Server);
             if (method == HTTP_POST) {
@@ -60,7 +63,7 @@ public:
         Server.on(handle, method, handlers.at(handle));
         const char* name = "UNKNOWN";
         switch (method) {
-#define METHOD(x) case HTTP_##x: name = #x; break;
+#define METHOD(x) case HTTP_##x: name = #x; break
             METHOD(ANY);
             METHOD(GET);
             METHOD(HEAD);
@@ -148,7 +151,8 @@ private:
 
     THttpSensor& httpSensor;
     TLightSensor* lightSensor;
-    ESP8266WebServer Server;
+    SimpleAuthProvider AuthProvider;
+    TServer Server;
     struct THelpItem {
         const char* method;
         const char* path;

@@ -13,7 +13,7 @@
 
 struct TDefaultSetup {
     THttpSensor& HttpSensor = THttpSensor::the();
-    THttpInterface Http{HttpSensor, 80};
+    THttpInterface<> Http{HttpSensor, 80};
     WifiClient wifi{NConfig::essid, NConfig::wifi_password};
     Ota ota{NConfig::hostname, NConfig::ota_pass_md5};
     TDebugHandler debug;
