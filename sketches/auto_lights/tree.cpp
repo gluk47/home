@@ -3,36 +3,28 @@
 #include "lib/controller.h"
 #include "lib/aleds.h"
 #include "lib/flash.h"
+#include "lib/light_sensor.h"
 #include "lib/main.h"
 #include "lib/ntp.h"
 
 const char* NConfig::hostname = "tree";
 TDefaultSetup dc;
 NTP ntp(3 * 3600, NConfig::ntp_server);
+TLightSensor light;
 
 using namespace std;
 
 constexpr unsigned NLeds = 50;
 
-struct TTreeRenderer {
+struct TTreeRenderer : public TAddressableLedStrip<> {
     const unsigned Step = 1;
     int MaxBright = 255;
-    NeoPixelBus<NeoGrbFeature, NeoEsp8266DmaWs2812xMethod>& Strip;
 
-    TTreeRenderer(NeoPixelBus<NeoGrbFeature, NeoEsp8266DmaWs2812xMethod>& strip)
-    : Strip(strip) {
-        randomSeed((analogRead(0) << 1) ^ (analogRead(0) << 3) ^ (analogRead(0) << 5) ^ (analogRead(0) << 7));
-    }
+    using TAddressableLedStrip<>::TAddressableLedStrip;
 
-    void operator()() {
-        auto h = ntp.getHours();
-        if (22 <= h or (6 <= h and h < 9)) {
-            MaxBright = 128;
-        } else if (h < 6) {
-            MaxBright = 64;
-        } else {
-            MaxBright = 256;
-        }
+    void update() override {
+        MaxBright = min(256, light.Value());
+        MaxBright = max(MaxBright, 8);
 
         for (int i = 0; i < 2; i++)
             gen_led(random(NLeds));
@@ -98,6 +90,12 @@ struct TTreeRenderer {
         adjust1(actual.B, target[led].B);
         Strip.SetPixelColor(led, actual);
     }
+
+    std::map<String, String> debug() const override {
+        return {
+            {"MaxBright", String(MaxBright)}
+        };
+    }
 };
 
-TAddressableLedStrip<TTreeRenderer> strip(NLeds, 20ms);
+TTreeRenderer renderer(NLeds, 30ms);

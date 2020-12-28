@@ -10,31 +10,33 @@
 #include "common.h"
 #include "switch.h"
 
-template <typename TUpdater, typename Feature = NeoGrbFeature, typename Method = NeoEsp8266DmaWs2812xMethod>
+template <typename Feature = NeoGrbFeature, typename Method = NeoEsp8266DmaWs2812xMethod>
 class TAddressableLedStrip : public Handler {
 public:
     TAddressableLedStrip(unsigned led_count, std::chrono::milliseconds period = 30ms)
     : Handler("NeoPixel", period)
-    , strip(led_count)
-    , updater(strip)
+    , Strip(led_count)
     {
         // only RX aka D9 aka GPIO3 is supported by NeoPixelBus at the moment.
         // FastLEDs support more pins but causes occasional glittering, rather frequent
         constexpr unsigned D9 = 3;
         pinMode(D9, OUTPUT);  // indicate our intentions to be able to detect pin conflicts
+
+        randomSeed((analogRead(0) << 1) ^ (analogRead(0) << 3) ^ (analogRead(0) << 5) ^ (analogRead(0) << 7));
     }
 
     void init() override {
-        strip.Begin();
+        Strip.Begin();
     }
+
+    virtual void update() = 0;
 
     std::map<String, String> debug() const override { return {}; }
-    void handle (std::chrono::milliseconds) override {
-        updater();
-        strip.Show();
+    void handle (std::chrono::milliseconds) final override {
+        update();
+        Strip.Show();
     }
 
-private:
-    NeoPixelBus<Feature, Method> strip;
-    TUpdater updater;
+protected:
+    NeoPixelBus<Feature, Method> Strip;
 };
