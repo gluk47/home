@@ -12,8 +12,10 @@ public:
 
     NTP(unsigned offset, const char* server = "pool.ntp.org")
     : NTPClient(UDP(), server, offset)
-    , Handler("NTP")
-    {}
+    , Handler("NTP", 60s)
+    {
+        NTPClient::setUpdateInterval(Period.count());
+    }
 
     void init() override {
         NTPClient::begin();
