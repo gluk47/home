@@ -9,7 +9,6 @@
 
 const char* NConfig::hostname = "tree";
 TDefaultSetup dc;
-NTP ntp(3 * 3600, NConfig::ntp_server);
 TLightSensor light;
 
 using namespace std;
@@ -17,7 +16,7 @@ using namespace std;
 constexpr unsigned NLeds = 50;
 
 struct TTreeRenderer : public TAddressableLedStrip<> {
-    const unsigned Step = 1;
+    unsigned Step = 1;
     int MaxBright = 255;
 
     using TAddressableLedStrip<>::TAddressableLedStrip;
@@ -25,6 +24,7 @@ struct TTreeRenderer : public TAddressableLedStrip<> {
     void update() override {
         MaxBright = min(256, light.Value());
         MaxBright = max(MaxBright, 8);
+        Step = max(1, MaxBright / 64);
 
         for (int i = 0; i < 2; i++)
             gen_led(random(NLeds));
@@ -47,7 +47,7 @@ struct TTreeRenderer : public TAddressableLedStrip<> {
             low = 0;
         if (high > 255)
             high = 255;
-        bright = min(bright, MaxBright);
+        bright = bright * MaxBright / 255;
         return random(low, high) * bright / 255;
     }
 
