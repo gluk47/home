@@ -16,15 +16,17 @@ using namespace std;
 constexpr unsigned NLeds = 50;
 
 struct TTreeRenderer : public TAddressableLedStrip<> {
-    unsigned Step = 1;
+    float Step = .05;
     int MaxBright = 255;
+    float progress[NLeds] = {};
+    RgbColor src[NLeds];
+    RgbColor target[NLeds];
 
     using TAddressableLedStrip<>::TAddressableLedStrip;
 
     void update() override {
         MaxBright = min(256, light.Value());
         MaxBright = max(MaxBright, 8);
-        Step = max(1, MaxBright / 64);
 
         for (int i = 0; i < 2; i++)
             gen_led(random(NLeds));
@@ -40,8 +42,6 @@ struct TTreeRenderer : public TAddressableLedStrip<> {
         3, 4, 5, 45, 46, 47
     };
 
-    RgbColor target[NLeds];
-
     int rcolor(int low, int high, int bright) {
         if (low > high)
             low = 0;
@@ -52,7 +52,7 @@ struct TTreeRenderer : public TAddressableLedStrip<> {
     }
 
     void gen_led(int i) {
-        int r, g, b, bright;
+        unsigned r, g, b, bright;
         if (branches.count(i)) {
             bright = random(0, 256);
             r = rcolor(0, 32, bright);
@@ -69,25 +69,27 @@ struct TTreeRenderer : public TAddressableLedStrip<> {
             g = rcolor(0, 64, bright);
             b = rcolor(0, 32, bright);
         }
+        src[i] = Strip.GetPixelColor(i);
         target[i] = RgbColor(r, g, b);
+        progress[i] = 0;
     }
 
     void adjust(int led) {
-        auto adjust1 = [this](uint8_t& actual, uint8_t desired) {
+        auto adjust1 = [](uint8_t& actual, uint8_t desired, float progress) {
             if (actual == desired)
                 return;
             uint8_t diff = max(desired, actual) - min(desired, actual);
-            if (diff <= Step)
-                actual = desired;
-            else if (actual > desired)
-                actual -= Step;
+            if (actual > desired)
+                actual = roundf(actual - diff * progress);
             else
-                actual += Step;
+                actual = roundf(actual + diff * progress);
         };
-        auto actual = Strip.GetPixelColor(led);
-        adjust1(actual.R, target[led].R);
-        adjust1(actual.G, target[led].G);
-        adjust1(actual.B, target[led].B);
+        RgbColor actual = src[led];
+        adjust1(actual.R, target[led].R, progress[led]);
+        adjust1(actual.G, target[led].G, progress[led]);
+        adjust1(actual.B, target[led].B, progress[led]);
+        if (progress[led] < 1)
+            progress[led] += Step;
         Strip.SetPixelColor(led, actual);
     }
 
