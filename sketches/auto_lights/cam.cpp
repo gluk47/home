@@ -13,21 +13,20 @@ namespace {
         {}
 
         void init() override {
-            dc.Http.on("/jpg", HTTP_GET, [&](THttpInterface<>::TServer& server){
+            dc.Http.on("/jpg", HTTP_GET, [&](THttpInterface<>::TServer& req){
                 camera_fb_t* buffer = nullptr;
                 while (!buffer) {
-                    cam.SwitchLed(server.arg("led") == "1");
+                    cam.SwitchLed(req.arg("led") == "1");
                     delay(1);
                     buffer = esp_camera_fb_get();
                     cam.SwitchLed(false);
                 }
 
                 if(buffer->format != PIXFORMAT_JPEG) {
-                    server.send(500, "text/plain", "not a jpeg (this is a bug in firmware)");
+                    req.send(500, "text/plain", "not a jpeg (this is a bug in firmware)");
                     return;
                 }
-                server.sendHeader("Content-Type", "image/jpeg");
-                server.sendContent_P(reinterpret_cast<const char*>(buffer->buf), buffer->len);
+                req.send_P(200, "image/jpeg", reinterpret_cast<const char*>(buffer->buf), buffer->len);
                 esp_camera_fb_return(buffer);
             }, "Get camshot ('?led=1' for flashlight)");
         }
