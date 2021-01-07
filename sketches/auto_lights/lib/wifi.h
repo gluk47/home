@@ -27,7 +27,9 @@ struct WifiClient : public Handler {
 
     std::map<String, String> debug() const override {
         return std::map<String, String> {
-            {"IP", ip()}
+            {"IP", ip()},
+            {"hostname", NConfig::hostname},
+            {"Network", NConfig::essid}
         };
     }
 
@@ -45,6 +47,9 @@ struct WifiClient : public Handler {
 
         if (WiFi.status() == WL_CONNECTED) {
             ip_ = WiFi.localIP().toString();
+#ifdef ESP8266
+            WiFi.hostname(NConfig::hostname);
+#endif
             Serial.printf("\nConnection established!\nIP: %s\n", ip().c_str());
         } else {
             Serial.println("\nConnection failed");
