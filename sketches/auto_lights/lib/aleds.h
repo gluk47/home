@@ -2,9 +2,6 @@
  * This is an addressable leds library adapter
  */
 #pragma once
-#ifdef IN_KDEVELOP_PARSER
-#   define ARDUINO_ARCH_ESP8266
-#endif
 #include <NeoPixelBus.h>
 
 #include "common.h"
